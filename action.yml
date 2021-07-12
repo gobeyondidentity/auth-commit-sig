@@ -1,0 +1,31 @@
+name: Authorize Commit Signing
+description: >
+  Verify signature of a signed commit using Beyond Identity. Enforces that all
+  commits are signed by authorized users in the Beyond Identity directory.
+
+inputs:
+  api_token:
+    description: >
+      API token for the Beyond Identity key management API. Should be stored as
+      a secret in your repository, and referenced as, e.g.
+
+          api_token: {{ secrets.BYNDID_KEY_MGMT_API_TOKEN }}
+    required: true
+  ref:
+    description: >
+      The commit reference to check. Defaults to HEAD, which will be the ref
+      checked out by `actions/checkout`.
+    required: false
+    default: "HEAD"
+
+runs:
+  using: docker
+  image: Dockerfile
+  env:
+    API_TOKEN: ${{ inputs.api_token }}
+  args:
+    - "-ref=${{ inputs.ref }}"
+
+branding:
+  icon: user-check
+  color: blue
