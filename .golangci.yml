@@ -1,0 +1,23 @@
+# This file configures golangci-lint.
+# Reference: https://golangci-lint.run/usage/configuration/
+
+linters:
+  disable-all: true
+  enable:
+    - deadcode
+    - depguard
+    - dogsled
+    - errcheck
+    - gofmt
+    - goimports
+    - golint
+    - goprintffuncname
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nolintlint
+    - staticcheck
+    - typecheck
+    - unconvert
+    - whitespace
