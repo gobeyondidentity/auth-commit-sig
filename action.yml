@@ -20,7 +20,7 @@ inputs:
 
 runs:
   using: docker
-  image: Dockerfile
+  image: docker://ghcr.io/byndid/auth-commit-sig:31184fb6461d38c67eabf0417943c839ad4ab850
   env:
     API_TOKEN: ${{ inputs.api_token }}
   args:
