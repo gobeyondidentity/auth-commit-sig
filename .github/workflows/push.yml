@@ -1,0 +1,27 @@
+name: Push pre-built docker image
+
+on: [pull_request]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: ghcr.io/byndid/auth-commit-sig:${{ github.event.pull_request.head.sha }}
+
+      - name: Output new image tag
+        run: echo "Pushed tagged image ghcr.io/byndid/auth-commit-sig:${{ github.event.pull_request.head.sha }}"

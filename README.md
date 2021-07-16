@@ -37,31 +37,3 @@ jobs:
 ```
 
 The `BYNDID_KEY_MGMT_API_TOKEN` should be set as a secret in the repository.
-
-
-## Development
-
-### Running the action locally
-
-Set environment variables:
-
-```
-export API_TOKEN=<redacted>
-export API_BASE_URL=https://api.rolling.byndid.run/key-mgmt
-```
-
-Build the image:
-
-```
-docker build . -t byndid/auth-commit-sig
-```
-
-Run the image:
-
-```
-docker run --rm --workdir /workspace -v $(pwd):/workspace \
-    -e API_TOKEN -e API_BASE_URL \
-    byndid/auth-commit-sig -ref=HEAD
-```
-
-`HEAD` can be replaced with any commit reference.

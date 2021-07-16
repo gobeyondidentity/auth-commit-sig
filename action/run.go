@@ -49,7 +49,7 @@ func (c Config) Validate() error {
 	return nil
 }
 
-// Run the action. Returns nil if the commit was properly signed by a PGP key
+// Run the action. Returns nil if the commit was properly signed by a GPG key
 // authorized for the committer.
 func Run(ctx context.Context, cfg Config) error {
 	err := cfg.Validate()
@@ -77,7 +77,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 	committerEmail := commit.Committer.Email
 
-	log.Printf("Getting authorization for PGP key %q with committer email %q", issuerKeyID, committerEmail)
+	log.Printf("Getting authorization for GPG key %q with committer email %q", issuerKeyID, committerEmail)
 
 	authorization, err := APIClient{
 		HTTPClient: http.DefaultClient,
@@ -103,7 +103,7 @@ func Verify(commit *object.Commit, authorization *Authorization) error {
 		return fmt.Errorf("authorization denied: %s", authorization.Message)
 	}
 
-	err := VerifyCommitSignature(authorization.PGPKey.Base64Key, commit)
+	err := VerifyCommitSignature(authorization.GPGKey.Base64Key, commit)
 	if err != nil {
 		return fmt.Errorf("signature verification failed: %w", err)
 	}
