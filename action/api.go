@@ -40,7 +40,7 @@ func (err BadResponseError) Error() string {
 type Authorization struct {
 	Authorized bool   `json:"authorized"`
 	Message    string `json:"message"`
-	PGPKey     PGPKey `json:"pgp_key"`
+	GPGKey     GPGKey `json:"gpg_key"`
 }
 
 // PrettyPrint returns a nicely formatted JSON representation of the
@@ -53,26 +53,26 @@ func (a Authorization) PrettyPrint() string {
 	return string(bs)
 }
 
-// PGPKey contains the PGP public key.
-type PGPKey struct {
-	// ID is the Beyond Identity ID of the PGP key.
+//	GPGKey contains the GPG public key.
+type GPGKey struct {
+	// ID is the Beyond Identity ID of the GPG key.
 	ID string `json:"id"`
-	// Base64Key is the binary PGP "transferable public key message".
+	// Base64Key is the binary GPG "transferable public key message".
 	Base64Key string `json:"base64_key"`
 }
 
 // GetAuthorization calls the Beyond Identity Key Management API to authorize a
-// PGP key for git commit signing.
-func (c APIClient) GetAuthorization(ctx context.Context, pgpKeyID, committerEmail string) (*Authorization, error) {
+// GPG key for git commit signing.
+func (c APIClient) GetAuthorization(ctx context.Context, keyID, committerEmail string) (*Authorization, error) {
 	u, err := url.Parse(c.APIBaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid base url: %w", err)
 	}
 
-	u.Path = path.Join(u.Path, "v0", "pgp", "key", "authorization", "git-commit-signing")
+	u.Path = path.Join(u.Path, "v0", "gpg", "key", "authorization", "git-commit-signing")
 
 	q := u.Query()
-	q.Set("pgp_key_id", pgpKeyID)
+	q.Set("key_id", keyID)
 	q.Set("committer_email", committerEmail)
 	u.RawQuery = q.Encode()
 
