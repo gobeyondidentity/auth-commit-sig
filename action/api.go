@@ -10,7 +10,7 @@ import (
 	"path"
 )
 
-const userAgent = "byndid/auth-commit-sig" // TODO: set a version of the action
+const userAgent = "byndid/auth-commit-sig v0.3.0"
 
 // APIClient wraps an http.Client to provide access to the Beyond Identity Key
 // Management API.
