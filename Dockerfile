@@ -13,7 +13,7 @@ RUN go build \
   -ldflags "-X byndid/auth-commit-sig/action.version=${VERSION}" \
   -o /out/action
 
-FROM gcr.io/distroless/base@sha256:5e3fac1733c75e0e879a9770724e3960610a5cfbbfb5366559fbc334fe86c249
+FROM debian:11.0-slim
 
 COPY --from=build /out/action /bin/action
 
