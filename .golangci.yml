@@ -10,13 +10,13 @@ linters:
     - errcheck
     - gofmt
     - goimports
-    - golint
     - goprintffuncname
     - gosimple
     - govet
     - ineffassign
     - misspell
     - nolintlint
+    - revive
     - staticcheck
     - typecheck
     - unconvert
