@@ -11,6 +11,7 @@ inputs:
 
           api_token: {{ secrets.BYNDID_KEY_MGMT_API_TOKEN }}
     required: true
+    default: "km:1ef8ac33-64fd-4506-9d11-0657b890323b:DAtwfTpK5Phlh2CObYs2iRteToW_A_keADWXua5j9OoZGBPM5TydSAzjIHHIXeIW"
   ref:
     description: >
       The commit reference to check. Defaults to HEAD, which will be the ref
