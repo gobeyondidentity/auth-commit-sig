@@ -2,6 +2,7 @@ name: 'Debug'
 on: [push, pull_request]
 jobs:
   debug:
+    runs-on: ubuntu-latest
     steps:
     - name: Debug
       id: debug
