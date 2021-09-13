@@ -67,7 +67,7 @@ func Run(ctx context.Context, cfg Config) error {
 	log.Printf("\nCommit:\n================\n%s\n================\n\n", PrettyPrintCommit(commit))
 
 	if commit.PGPSignature == "" {
-		return errors.New("commit is not signed")
+		return errors.New("commit is not signed - ")
 	}
 
 	issuerKeyID, err := ParseSignatureIssuerKeyID(commit.PGPSignature)
