@@ -2,5 +2,8 @@ name: 'Debug'
 on: [push, pull_request]
 jobs:
   debug:
-    script:
-      - echo hello
+    steps:
+    - name: Debug
+      id: debug
+      run: |
+        echo hello
