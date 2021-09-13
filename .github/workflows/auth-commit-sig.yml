@@ -18,6 +18,9 @@ jobs:
           # which must be signed by an authorized user before it can be merged.
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Authorize with Beyond Identity
+        runs:
+          using: 'docker'
+          image: 'Dockerfile'
         uses: ./ # Uses the action in the root directory
         env:
           # Override the default production URL to point to our rolling
