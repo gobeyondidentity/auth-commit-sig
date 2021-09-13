@@ -4,7 +4,6 @@ jobs:
   debug:
     runs-on: ubuntu-latest
     steps:
-    - name: Debug
-      id: debug
-      run: |
-        echo hello
+      - name: Debug
+        uses: ./ # Uses an action in the root directory
+        id: debug
