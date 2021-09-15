@@ -1,0 +1,14 @@
+ARG VERSION
+FROM auth-commit-sig-builder:${VERSION} as builder
+
+FROM docker.io/library/debian:11.0-slim@sha256:e3ed4be20c22a1358020358331d177aa2860632f25b21681d79204ace20455a6
+
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates
+RUN update-ca-certificates
+
+COPY --from=builder /out/action /bin/action
+
+ENTRYPOINT ["/bin/action"]

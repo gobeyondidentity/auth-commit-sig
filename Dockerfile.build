@@ -1,4 +1,4 @@
-FROM golang:1.16 AS build
+FROM golang:1.16
 
 WORKDIR /src
 
@@ -12,9 +12,3 @@ ARG VERSION=latest
 RUN go build \
   -ldflags "-X byndid/auth-commit-sig/action.version=${VERSION}" \
   -o /out/action
-
-FROM debian:11.0-slim
-
-COPY --from=build /out/action /bin/action
-
-ENTRYPOINT ["/bin/action"]
