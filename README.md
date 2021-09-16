@@ -31,7 +31,7 @@ jobs:
           # which must be signed by an authorized user before it can be merged.
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Authorize with Beyond Identity
-        uses: byndid/auth-commit-sig@v0
+        uses: gobeyondidentity/auth-commit-sig@v0
         with:
           api_token: ${{ secrets.BYNDID_KEY_MGMT_API_TOKEN }}
 ```
