@@ -12,9 +12,9 @@ import (
 
 var (
 	// version will be replaced at build time by a string like "1.2.3"
-	version string = "unknown"
+	version = "unknown"
 	// userAgent will be sent with all API requests
-	userAgent string = "byndid/auth-commit-sig:" + version
+	userAgent = "byndid/auth-commit-sig:" + version
 )
 
 // APIClient wraps an http.Client to provide access to the Beyond Identity Key
