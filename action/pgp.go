@@ -6,6 +6,8 @@ import (
 	"io"
 	"strings"
 
+	// TODO: The OpenPGP package is deprecated. See
+	// https://github.com/golang/go/issues/44226.
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"

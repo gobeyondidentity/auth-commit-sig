@@ -20,7 +20,7 @@ inputs:
 
 runs:
   using: docker
-  image: docker://docker.io/byndid/auth-commit-sig:0.4.1
+  image: docker://docker.io/byndid/auth-commit-sig:0.5.0-rc3
   env:
     API_TOKEN: ${{ inputs.api_token }}
   args:
