@@ -1,7 +1,6 @@
 name: Authorize Commit Signing
 description: >
-  Verify signature of a signed commit using Beyond Identity. Enforces that all
-  commits are signed by authorized users in the Beyond Identity directory.
+  Verify signature of a signed commit using Beyond Identity.
 
 inputs:
   api_token:
@@ -20,7 +19,7 @@ inputs:
 
 runs:
   using: docker
-  image: docker://docker.io/byndid/auth-commit-sig:0.5.0
+  image: docker://docker.io/byndid/auth-commit-sig:0.6.0-rc1
   env:
     API_TOKEN: ${{ inputs.api_token }}
   args:
