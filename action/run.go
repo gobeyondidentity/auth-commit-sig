@@ -26,11 +26,6 @@ type Config struct {
 	// APIBaseURL is the base URL of the Beyond Identity Key Management API.
 	// Required.
 	APIBaseURL string
-	// AllowlistConfigRepoName is a path to the directory containing a clone of the
-	// git repository containing the allowlist configuration, if configured.
-	// Both AllowlistConfigRepoName and AllowlistConfigFilePath must be set if
-	// allowlist is configured.
-	AllowlistConfigRepoName string
 	// AllowlistConfigFilePath is a path to the file containing the allowlist
 	// configuration, if configured.
 	// Both AllowlistConfigRepoName and AllowlistConfigFilePath must be set if
@@ -60,12 +55,6 @@ func (c Config) Validate() error {
 	if c.APIBaseURL == "" {
 		return MissingConfigFieldError("APIBaseURL")
 	}
-	if c.AllowlistConfigRepoName == "" && c.AllowlistConfigFilePath != "" {
-		return MissingConfigFieldError("AllowlistConfigRepoName")
-	}
-	if c.AllowlistConfigRepoName != "" && c.AllowlistConfigFilePath == "" {
-		return MissingConfigFieldError("AllowlistConfigFilePath")
-	}
 	return nil
 }
 
@@ -76,6 +65,7 @@ func Run(ctx context.Context, cfg Config) error {
 	if err != nil {
 		return fmt.Errorf("invalid configuration: %w", err)
 	}
+
 	log.Printf("Verifying commit with ref %q in %q", cfg.CommitRef, cfg.RepoPath)
 
 	commit, err := GetCommit(cfg.RepoPath, cfg.CommitRef)
@@ -88,12 +78,12 @@ func Run(ctx context.Context, cfg Config) error {
 	committerEmail := commit.Committer.Email
 
 	// Fetch allowlist.
-	allowlist, err := GetAllowlist(cfg.AllowlistConfigRepoName, cfg.AllowlistConfigFilePath)
+	allowlist, err := GetAllowlist(cfg.AllowlistConfigFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to get allowlist: %w", err)
 	}
 
-	// If allowlist email addresses exist, verify commit by email address.
+	// If allowlist contains list of email addresses, verify commit by email address.
 	if len(allowlist.EmailAddresses) > 0 {
 		log.Printf("Checking email address allowlist for bypassing signature verification\n")
 		onAllowlistEmails := verifyCommitByEmailAddress(committerEmail, allowlist.EmailAddresses)
@@ -104,7 +94,7 @@ func Run(ctx context.Context, cfg Config) error {
 		log.Printf("Committer email: \"%s\" is not on email address allowlist, continuing signature verification\n\n", committerEmail)
 	}
 
-	// If allowlist third party keys exists, verify signature throuh keys.
+	// If allowlist contains third party keys, attempt to verify signature through the keys.
 	if len(allowlist.ThirdPartyKeys) > 0 {
 		log.Printf("Verifying commit signature with third party keys\n\n")
 		pass, err := verifyCommitSignatureByThirdPartyKeys(allowlist.ThirdPartyKeys, commit)
@@ -118,7 +108,7 @@ func Run(ctx context.Context, cfg Config) error {
 		log.Printf("No third party keys validated signature, continuing signature verification\n\n")
 	}
 
-	// Signature verification.
+	// Signature verification through BI cloud.
 	if commit.PGPSignature == "" {
 		return errors.New("commit is not signed")
 	}

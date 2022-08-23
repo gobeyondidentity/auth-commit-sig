@@ -16,44 +16,18 @@ inputs:
       checked out by `actions/checkout`.
     required: false
     default: "HEAD"
-  allowlist_config_repo_name:
-    description: >
-      The name of the repository where the allowlist for email addresses and third 
-      party keys are stored. 
-    required: false
   allowlist_config_file_path:
     description: >
-      The file path where the allowlist config file is stored within the allowlist 
-      repo. May contain email addresses for bypassing signature verification or third 
-      party keys used for signature verification. Should be formatted as so:
-
-      email_addresses:
-        - user1@company.com
-        - user2@company.com
-      third_party_keys:
-        - |
-          -----BEGIN PGP PUBLIC KEY BLOCK-----
-
-          m3IEYr73lBMIKoZIzj01AQcCAwT1gCXHMjKP6EWgtzJNxpkfFWhpK4dsV1dfbzRz
-          ...truncated
-
-          -----END PGP PUBLIC KEY BLOCK-----
-        - | 
-          -----BEGIN PGP PUBLIC KEY BLOCK-----
-
-          t3IEYr738sG78d7SD01AQcCAwT1gCXHMjKP6EWgtzJNxpkfF01AQcCAwT11dfbzRx
-          ...truncated
-
-          -----END PGP PUBLIC KEY BLOCK-----
+      The file path where the allowlist config file is stored from the allowlist 
+      repo root. See README on how to configure allowlist.
     required: false
 
 
 runs:
   using: docker
-  image: docker://docker.io/byndid/auth-commit-sig:0.7.0-rc7
+  image: docker://docker.io/byndid/auth-commit-sig:0.7.0-rc8
   env:
     API_TOKEN: ${{ inputs.api_token }}
-    ALLOWLIST_CONFIG_REPO_NAME: ${{ inputs.allowlist_config_repo_name }}
     ALLOWLIST_CONFIG_FILE_PATH: ${{ inputs.allowlist_config_file_path }}
   args:
     - "-ref=${{ inputs.ref }}"

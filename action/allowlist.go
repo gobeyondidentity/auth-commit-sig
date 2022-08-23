@@ -3,6 +3,7 @@ package action
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"path"
 
 	"gopkg.in/yaml.v3"
@@ -34,9 +35,13 @@ type Allowlist struct {
 var allowlistPrefix = "allowlist"
 
 // GetAllowlist verifies and parses the allowlist configuration from the allowlist
-// configuration repository. If repoName and filePath are not empty, returns an
-// Allowlist struct containing empty lists for email addresses and third party keys.
-func GetAllowlist(repoName, filePath string) (*Allowlist, error) {
+// file path. If filePath is empty, returns an Allowlist struct containing empty
+// lists for email addresses and third party keys.
+func GetAllowlist(filePath string) (*Allowlist, error) {
+	if filePath == "" {
+		log.Println("No allowlist configured")
+		return &Allowlist{}, nil
+	}
 	fullPath := path.Join(allowlistPrefix, filePath)
 	yfile, err := ioutil.ReadFile("./" + fullPath)
 	if err != nil {

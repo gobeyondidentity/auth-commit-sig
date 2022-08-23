@@ -27,7 +27,7 @@ func VerifyCommitSignature(base64Key string, commit *object.Commit) error {
 	return nil
 }
 
-// verifyCommitByEmail accepts a commiter email address and a list of allowed email
+// verifyCommitByEmail accepts a committer email address and a list of allowed email
 // addresses that can bypass commit signature validation. Returns true if the email
 // is found on the allowlist; otherwise returns false.
 func verifyCommitByEmailAddress(committerEmailAddress string, allowlistEmailAddresses []string) bool {
@@ -42,9 +42,9 @@ func verifyCommitByEmailAddress(committerEmailAddress string, allowlistEmailAddr
 }
 
 // verifyCommitSignatureByThirdPartyKeys accepts a commit object and a list of armored
-// PGP public keys. Parses the key into a temporary key ring, then checks that the signature
-// attached to the commit is valid. Returns true if the signature is validated by a key
-// within the list.
+// PGP public keys. Parses the keys one by one into a temporary key ring, then checks
+// that the signature attached to the commit is valid. Returns true if the signature is
+// validated by a key within the list.
 //
 // Armored simply means the format of the key is base64 encoded data, alongside
 // a plaintext header + footer:

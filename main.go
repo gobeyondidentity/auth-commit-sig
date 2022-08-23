@@ -21,7 +21,6 @@ func main() {
 		CommitRef:               *ref,
 		APIToken:                getRequiredEnv("API_TOKEN"),
 		APIBaseURL:              getOptionalEnv("API_BASE_URL", "https://api.byndid.com/key-mgmt"),
-		AllowlistConfigRepoName: getOptionalEnv("ALLOWLIST_CONFIG_REPO_NAME", ""),
 		AllowlistConfigFilePath: getOptionalEnv("ALLOWLIST_CONFIG_FILE_PATH", ""),
 	}
 

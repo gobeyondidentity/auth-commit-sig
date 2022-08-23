@@ -49,10 +49,15 @@ jobs:
       - name: Authorize with Beyond Identity
         uses: gobeyondidentity/auth-commit-sig@v0
         with:
+          # API Token to call Beyond Identity cloud.
+          # The token should be stored as an actions secret.
+          # https://docs.github.com/en/actions/security-guides/encrypted-secrets.
           api_token: ${{ secrets.BYNDID_KEY_MGMT_API_TOKEN }}
 ```
 
-The `BYNDID_KEY_MGMT_API_TOKEN` should be set as a secret in the repository.
+The `BYNDID_KEY_MGMT_API_TOKEN` should be set as an 
+[actions secret](https://docs.github.com/en/actions/security-guides/encrypted-secrets) 
+in the repository.
 
 ## Allowlist
 
@@ -103,10 +108,16 @@ third_party_keys:
 2. Add the additional `Checkout Allowlist repository` step the workflow configuration. This step
    checks out repo where the allowlist YAML file is stored.
 
+   If the repository is private, should set up an SSH Key for cloning. 
+   See [Deploy Keys](https://docs.github.com/en/developers/overview/managing-deploy-keys#deploy-keys).
+
+   This action step will also incorporate the private key as `ALLOWLIST_REPO_SSH_PRIV_KEY`. 
+   This should be set as an [actions secret](https://docs.github.com/en/actions/security-guides/encrypted-secrets) 
+   in the repository.
+
 3. Add additional variables to the `Authorize with Beyond Identity` step.
 
-- `allowlist_config_repo_name`: Repository name where allowlist configuration is stored.
-- `allowlist_config_file_path`: File path to the allowlist configuration file.
+- `allowlist_config_file_path`: File path to the allowlist configuration file from root of the allowlist repository.
 
 ### Example Workflow Configuration
 
@@ -140,9 +151,12 @@ jobs:
         with:
           # Path to allowlist repository in the format (owner/repo_name).
           repository: "gobeyondidentity/commit-signing-allowlist"
-          # SSH Key for private repositories.
-          ssh-key: ${{ secrets.ALLOWLIST_REPO_SSH_KEY }}
-          # Do not modify. Our script uses this path to fetch the allowlist file.
+          # SSH Key for private repositories. If repo is public, can omit.
+          # See https://docs.github.com/en/developers/overview/managing-deploy-keys#deploy-keys.
+          # The key should be stored as an actions secret.
+          # See https://docs.github.com/en/actions/security-guides/encrypted-secrets.
+          ssh-key: ${{ secrets.ALLOWLIST_REPO_SSH_PRIV_KEY }}
+          # Do not modify. Our action uses this path to fetch the allowlist file.
           path: "allowlist"
       - name: Authorize with Beyond Identity
         uses: gobeyondidentity/auth-commit-sig@v0
@@ -151,11 +165,12 @@ jobs:
           # at https://api.byndid.com/key-mgmt.
           API_BASE_URL: "https://api.byndid.com/key-mgmt"
         with:
+          # API Token to call Beyond Identity cloud.
+          # The token should be stored as an actions secret.
+          # https://docs.github.com/en/actions/security-guides/encrypted-secrets.
           api_token: ${{ secrets.BYNDID_KEY_MGMT_API_TOKEN }}
-          # If allowlist is configured, set the following variables:
-          # Repository name where allowlist configuration is stored.
-          # Should be the same as the repository in "Checkout Allowlist repository" step (excluding owner prefix).
-          allowlist_config_repo_name: "commit-signing-allowlist"
-          # File path to the allowlist configuration file. See README for details on how to format this file.
+          # If allowlist is configured, set this to the file path to the allowlist
+          # configuration file starting from the root of the allowlist repository.
+          # See README for details on how to format this file.
           allowlist_config_file_path: "allowlist.yaml"
 ```
