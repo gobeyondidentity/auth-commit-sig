@@ -14,12 +14,18 @@ GitHub Action for authorizing a Beyond Identity user to sign git commits and
 verifying those signatures. The action enforces that all commits are signed by
 authorized users in your organization's Beyond Identity directory.
 
+Additionally, an allowlist can be configured for select users to bypass signature
+verification and also for verification by third party keys. See section on
+[Allowlist](#allowlist).
+
 ## Usage
 
 The recommended usage is to add a workflow to your repository that runs on all
 pull requests targeting the default branch (e.g. `main`).
 
-```
+### Actions Workflow
+
+```yaml
 name: Authorize Commit Signing
 
 on:
@@ -32,7 +38,7 @@ jobs:
   auth-commit-sig:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           # Critical: check out the head commit on the branch. By default,
           # actions/checkout will check out a merge commit built for the pull
@@ -47,3 +53,109 @@ jobs:
 ```
 
 The `BYNDID_KEY_MGMT_API_TOKEN` should be set as a secret in the repository.
+
+## Allowlist
+
+An allowlist can be configured for the github action to pass. The configuration contains the
+following two lists:
+
+1. Email addresses allowed to bypass signature verification.
+2. Third party keys used for signature verification.
+
+If the email address of the committer is on the allowlist, the action will bypass signature
+verification. Otherwise, it will continue with the regular signature verification process.
+
+If there are third party keys on the allowlist, the action will attempt to verify
+the signature using all the configured keys. If verification succeeds, the action will
+pass. If verification fails, the action continues with the regular signature verification
+process.
+
+### Actions Workflow
+
+Some additional steps added to the action workflow.
+
+1. In a repository, create an allowlist YAML file. The repository _can_ be the same repository
+   where the action is registered, or it can be a separate repository.
+
+### Example Allowlist YAML file - allowlist.yaml
+
+```yaml
+email_addresses:
+  - user1@company.com
+  - user2@company.com
+third_party_keys:
+  - |
+    -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+    m3IEYr73lBMIKoZIzj01AQcCAwT1gCXHMjKP6EWgtzJNxpkfFWhpK4dsV1dfbzRz
+    ...truncated
+
+    -----END PGP PUBLIC KEY BLOCK-----
+  - |
+    -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+    t3IEYr738sG78d7SD01AQcCAwT1gCXHMjKP6EWgtzJNxpkfF01AQcCAwT11dfbzRx
+    ...truncated
+
+    -----END PGP PUBLIC KEY BLOCK-----
+```
+
+2. Add the additional `Checkout Allowlist repository` step the workflow configuration. This step
+   checks out repo where the allowlist YAML file is stored.
+
+3. Add additional variables to the `Authorize with Beyond Identity` step.
+
+- `allowlist_config_repo_name`: Repository name where allowlist configuration is stored.
+- `allowlist_config_file_path`: File path to the allowlist configuration file.
+
+### Example Workflow Configuration
+
+```yaml
+name: Authorize Commit Signing
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  auth-commit-sig:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout commit
+        uses: actions/checkout@v3
+        with:
+          # Critical: check out the head commit on the branch. By default,
+          # actions/checkout will check out a merge commit built for the pull
+          # request and signed by Github itself. Using the pull-request HEAD
+          # allows the action to check the latest commit on the pull request,
+          # which must be signed by an authorized user before it can be merged.
+          ref: ${{ github.event.pull_request.head.sha }}
+        # If allowlist is configured, checkout allowlist repository. Otherwise, do
+        # not include this step.
+        # The allowlist _can_ be in the same repository as the step above, or can be
+        # configured in a seperate repository. See README for details on how to set
+        # up the allowlist configuration.
+      - name: Checkout Allowlist repository
+        uses: actions/checkout@v3
+        with:
+          # Path to allowlist repository in the format (owner/repo_name).
+          repository: "gobeyondidentity/commit-signing-allowlist"
+          # SSH Key for private repositories.
+          ssh-key: ${{ secrets.ALLOWLIST_REPO_SSH_KEY }}
+          # Do not modify. Our script uses this path to fetch the allowlist file.
+          path: "allowlist"
+      - name: Authorize with Beyond Identity
+        uses: ./ # Uses the action in the root directory.
+        env:
+          # If API_BASE_URL is omitted, defaults to our production API server
+          # at https://api.byndid.com/key-mgmt.
+          API_BASE_URL: "https://api.byndid.com/key-mgmt"
+        with:
+          api_token: ${{ secrets.BYNDID_KEY_MGMT_API_TOKEN }}
+          # If allowlist is configured, set the following variables:
+          # Repository name where allowlist configuration is stored.
+          # Should be the same as the repository in "Checkout Allowlist repository" step (excluding owner prefix).
+          allowlist_config_repo_name: "commit-signing-allowlist"
+          # File path to the allowlist configuration file. See README for details on how to format this file.
+          allowlist_config_file_path: "allowlist.yaml"
+```

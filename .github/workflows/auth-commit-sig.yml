@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout commit
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           # Critical: check out the head commit on the branch. By default,
           # actions/checkout will check out a merge commit built for the pull
@@ -17,12 +17,31 @@ jobs:
           # allows the action to check the latest commit on the pull request,
           # which must be signed by an authorized user before it can be merged.
           ref: ${{ github.event.pull_request.head.sha }}
+        # If allowlist is configured, checkout allowlist repository. Otherwise, do 
+        # not include this step.
+        # The allowlist _can_ be in the same repository as the step above, or can be 
+        # configured in a seperate repository. See README for details on how to set 
+        # up the allowlist configuration.
+      - name: Checkout Allowlist repository
+        uses: actions/checkout@v3
+        with:
+          # Path to allowlist repository in the format (owner/repo_name).
+          repository: "gobeyondidentity/commit-signing-allowlist"
+          # SSH Key for private repositories.
+          ssh-key: ${{ secrets.ALLOWLIST_REPO_SSH_KEY }}
+          # Do not modify. Our script uses this path to fetch the allowlist file.
+          path: "allowlist"
       - name: Authorize with Beyond Identity
-        uses: ./ # Uses the action in the root directory
+        uses: ./ # Uses the action in the root directory.
         env:
-          # Override the default production URL to point to our rolling
-          # environment:
-          API_BASE_URL: "https://api.rolling.byndid.run/key-mgmt"
-          # TODO: remove this to switch to production, once the API is released.
+          # If API_BASE_URL is omitted, defaults to our production API server
+          # at https://api.byndid.com/key-mgmt.
+          API_BASE_URL: "https://api.byndid.com/key-mgmt"
         with:
           api_token: ${{ secrets.BYNDID_KEY_MGMT_API_TOKEN }}
+          # If allowlist is configured, set the following variables:
+          # Repository name where allowlist configuration is stored. 
+          # Should be the same as the repository in "Checkout Allowlist repository" step (excluding owner prefix).
+          allowlist_config_repo_name: "commit-signing-allowlist" 
+          # File path to the allowlist configuration file. See README for details on how to format this file.
+          allowlist_config_file_path: "allowlist.yaml" 

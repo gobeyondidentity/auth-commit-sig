@@ -17,10 +17,12 @@ func main() {
 	flag.Parse()
 
 	cfg := action.Config{
-		RepoPath:   *path,
-		CommitRef:  *ref,
-		APIToken:   getRequiredEnv("API_TOKEN"),
-		APIBaseURL: getOptionalEnv("API_BASE_URL", "https://api.byndid.com/key-mgmt"),
+		RepoPath:                *path,
+		CommitRef:               *ref,
+		APIToken:                getRequiredEnv("API_TOKEN"),
+		APIBaseURL:              getOptionalEnv("API_BASE_URL", "https://api.byndid.com/key-mgmt"),
+		AllowlistConfigRepoName: getOptionalEnv("ALLOWLIST_CONFIG_REPO_NAME", ""),
+		AllowlistConfigFilePath: getOptionalEnv("ALLOWLIST_CONFIG_FILE_PATH", ""),
 	}
 
 	err := action.Run(context.Background(), cfg)
@@ -28,8 +30,6 @@ func main() {
 		log.Println("Error from action:", err)
 		os.Exit(1)
 	}
-
-	log.Println("Commit is signed by an authorized Beyond Identity user")
 }
 
 func getRequiredEnv(name string) string {

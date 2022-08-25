@@ -6,11 +6,9 @@ import (
 	"io"
 	"strings"
 
-	// TODO: The OpenPGP package is deprecated. See
-	// https://github.com/golang/go/issues/44226.
-	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/openpgp/armor"
-	"golang.org/x/crypto/openpgp/packet"
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/ProtonMail/go-crypto/openpgp/armor"
+	"github.com/ProtonMail/go-crypto/openpgp/packet"
 )
 
 // ParseSignatureIssuerKeyID parses an ASCII-armored PGP signature and extracts
@@ -71,7 +69,7 @@ func CheckSignatureByKey(base64Key, armoredSignature, payload string) error {
 		return fmt.Errorf("failed to parse key: %w", err)
 	}
 
-	_, err = openpgp.CheckArmoredDetachedSignature(keyRing, strings.NewReader(payload), strings.NewReader(armoredSignature))
+	_, err = openpgp.CheckArmoredDetachedSignature(keyRing, strings.NewReader(payload), strings.NewReader(armoredSignature), nil)
 	if err != nil {
 		return fmt.Errorf("signature verification failed: %w", err)
 	}
