@@ -3,6 +3,8 @@ package action
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
+	"os"
 	"path"
 
 	"gopkg.in/yaml.v3"
@@ -38,7 +40,18 @@ var allowlistPrefix = "allowlist"
 // Allowlist struct containing empty lists for email addresses and third party keys.
 func GetAllowlist(repoName, filePath string) (*Allowlist, error) {
 	fullPath := path.Join(allowlistPrefix, repoName, filePath)
-	yfile, err := ioutil.ReadFile("./" + fullPath)
+	log.Println("fullpath: " + fullPath)
+	dir, _ := os.Getwd()
+	log.Println("dir: " + dir)
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		log.Println(err)
+	}
+	for _, file := range files {
+		fmt.Println(file.Name(), file.IsDir())
+	}
+	log.Println(dir + "/" + fullPath)
+	yfile, err := ioutil.ReadFile(dir + "/" + fullPath)
 	if err != nil {
 		return nil, fmt.Errorf(`failed to read allowlist yaml configuration file at '%s': %w`, fullPath, err)
 	}

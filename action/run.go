@@ -76,7 +76,7 @@ func Run(ctx context.Context, cfg Config) error {
 	if err != nil {
 		return fmt.Errorf("invalid configuration: %w", err)
 	}
-
+	log.Printf("repoPath: %s", cfg.RepoPath)
 	log.Printf("Verifying commit with ref %q in %q", cfg.CommitRef, cfg.RepoPath)
 
 	commit, err := GetCommit(cfg.RepoPath, cfg.CommitRef)
