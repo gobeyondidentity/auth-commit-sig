@@ -86,15 +86,6 @@ func Run(ctx context.Context, cfg Config) error {
 
 	log.Printf("\nCommit:\n================\n%s\n================\n\n", PrettyPrintCommit(commit))
 
-	if commit.PGPSignature == "" {
-		return errors.New("commit is not signed")
-	}
-
-	issuerKeyID, err := ParseSignatureIssuerKeyID(commit.PGPSignature)
-	if err != nil {
-		return fmt.Errorf("failed to parse signature: %w", err)
-	}
-
 	committerEmail := commit.Committer.Email
 
 	// Fetch allowlist.
@@ -126,6 +117,16 @@ func Run(ctx context.Context, cfg Config) error {
 			return nil
 		}
 		log.Printf("No third party keys validated signature, continuing signature verification\n\n")
+	}
+
+	// Signature verification.
+	if commit.PGPSignature == "" {
+		return errors.New("commit is not signed")
+	}
+
+	issuerKeyID, err := ParseSignatureIssuerKeyID(commit.PGPSignature)
+	if err != nil {
+		return fmt.Errorf("failed to parse signature: %w", err)
 	}
 
 	log.Printf("Getting authorization for GPG key %q with committer email %q", issuerKeyID, committerEmail)
