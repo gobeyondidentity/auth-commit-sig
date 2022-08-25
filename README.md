@@ -145,7 +145,7 @@ jobs:
           # Do not modify. Our script uses this path to fetch the allowlist file.
           path: "allowlist"
       - name: Authorize with Beyond Identity
-        uses: ./ # Uses the action in the root directory.
+        uses: gobeyondidentity/auth-commit-sig@v0
         env:
           # If API_BASE_URL is omitted, defaults to our production API server
           # at https://api.byndid.com/key-mgmt.

@@ -31,7 +31,7 @@ type Allowlist struct {
 	ThirdPartyKeys []string `yaml:"third_party_keys"`
 }
 
-var allowlistPrefix = "allowlist"
+var allowlistPrefix = "./allowlist"
 
 // GetAllowlist verifies and parses the allowlist configuration from the allowlist
 // configuration repository. If repoName and filePath are not empty, returns an
