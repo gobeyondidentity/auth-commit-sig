@@ -50,7 +50,7 @@ inputs:
 
 runs:
   using: docker
-  image: docker://docker.io/byndid/auth-commit-sig:0.7.0-rc5
+  image: docker://docker.io/byndid/auth-commit-sig:0.7.0-rc6
   env:
     API_TOKEN: ${{ inputs.api_token }}
     ALLOWLIST_CONFIG_REPO_NAME: ${{ inputs.allowlist_config_repo_name }}
