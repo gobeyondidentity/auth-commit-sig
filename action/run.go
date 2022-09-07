@@ -76,7 +76,7 @@ func Run(ctx context.Context, cfg Config) *Outcome {
 	}
 
 	// Validate that a signature exists for third party key validation and BI cloud verification.
-	if commit.PGPSignature != "" {
+	if commit.PGPSignature == "" {
 		o.SetErrors(errors.New("commit is not signed"))
 		o.SetResultAndDescription(FAIL, "Commit is not signed. See errors for details.")
 		return o

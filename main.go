@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 
 	"byndid/auth-commit-sig/action"
 )
@@ -35,8 +36,10 @@ func main() {
 		os.Exit(1)
 	}
 	log.Printf("Outcome JSON: \n%s", string(outcomeJSON))
-	stdOut := []byte(fmt.Sprintf(`echo "::set-output name=outcome::%s"`, string(outcomeJSON)))
-	_, err = os.Stdout.Write(stdOut)
+	setOutputCmd := fmt.Sprintf(`echo "::set-output name=outcome::%s"`, string(outcomeJSON))
+
+	cmd := exec.Command(setOutputCmd)
+	err = cmd.Run()
 	if err != nil {
 		log.Printf("Failed to set output for this step: %v", err)
 		os.Exit(1)
