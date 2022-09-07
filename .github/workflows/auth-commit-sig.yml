@@ -20,21 +20,25 @@ jobs:
         # If allowlist is configured, checkout allowlist repository. Otherwise, do 
         # not include this step.
         # The allowlist _can_ be in the same repository as the step above, or can be 
-        # configured in a seperate repository. See README for details on how to set 
+        # configured in a separate repository. See README for details on how to set 
         # up the allowlist configuration.
       - name: Checkout Allowlist repository
         uses: actions/checkout@v3
         with:
           # Path to allowlist repository in the format (owner/repo_name).
+          # If it is the same respository as above, can skip this step.
           repository: "gobeyondidentity/commit-signing-allowlist"
           # SSH Key for private repositories. If repo is public, can omit.
           # See https://docs.github.com/en/developers/overview/managing-deploy-keys#deploy-keys.
-          # The key should be stored as an actions secret.
+          # The key should be stored as an actions secret or fetched from a secrets manager.
           # See https://docs.github.com/en/actions/security-guides/encrypted-secrets.
           ssh-key: ${{ secrets.ALLOWLIST_REPO_SSH_PRIV_KEY }}
-          # Do not modify. Our action uses this path to fetch the allowlist file.
-          path: "allowlist"
+          # Relative path under $GITHUB_WORKSPACE to place the repository.
+          # NOTE: the repo_name will not be cloned as a folder. Only the files will
+          # be checked out at this path.
+          path: "allowlist-dir"
       - name: Authorize with Beyond Identity
+        id: signature-verification
         uses: ./ # Uses the action in the root directory.
         env:
           # If API_BASE_URL is omitted, defaults to our production API server
@@ -42,10 +46,25 @@ jobs:
           API_BASE_URL: "https://api.byndid.com/key-mgmt"
         with:
           # API Token to call Beyond Identity cloud.
-          # The token should be stored as an actions secret.
+          # The token should be stored as an actions secret or fetched from a secrets manager.
           # https://docs.github.com/en/actions/security-guides/encrypted-secrets.
           api_token: ${{ secrets.BYNDID_KEY_MGMT_API_TOKEN }}
+          # Repository which the signature verification action is performed on.
+          repository: "gobeyondidentity/auth-commit-sig"
           # If allowlist is configured, set this to the file path to the allowlist
-          # configuration file starting from the root of the allowlist repository. 
+          # configuration file starting from $GITHUB_WORKSPACE.
+          # If it is from a different repository, this variable should be prefixed
+          # with `./` and the `path` from Step 2.
+          # Ex. `./{path}/{path_to_allowlist}`
+          # If it is the same repository as the action, it is just the path to the 
+          # allowlist configuration file.
+          # Ex. `./{path_to_allowlist}`
           # See README for details on how to format this file.
-          allowlist_config_file_path: "allowlist.yaml" 
+          allowlist_config_file_path: "./allowlist-dir/allowlist.yaml" 
+        # Echo outcome JSON to standard out.
+      - name: Print outcome
+        run: |
+          echo "${{ steps.signature-verification.outputs.outcome }}"
+    # Output of job. Can be accessed in other jobs as ${{ needs.auth-commit-sig.outputs.outcome }}.
+    outputs:
+      outcome: ${{ steps.signature-verification.outputs.outcome }}

@@ -6,149 +6,135 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
-	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
-// Config configures a run of the action.
-type Config struct {
-	// RepoPath is a path to a directory containing a clone of the git repository.
-	// Required.
-	RepoPath string
-	// CommitRef is the commit reference to verify (e.g. "HEAD" or
-	// "cf2d2127c69c57bef0232b553146c418e1cba43a").
-	// Required.
-	CommitRef string
-	// APIToken is used as a Bearer token for the Beyond Identity Key Management
-	// API.
-	// Required.
-	APIToken string
-	// APIBaseURL is the base URL of the Beyond Identity Key Management API.
-	// Required.
-	APIBaseURL string
-	// AllowlistConfigFilePath is a path to the file containing the allowlist
-	// configuration, if configured.
-	// Both AllowlistConfigRepoName and AllowlistConfigFilePath must be set if
-	// allowlist is configured.
-	AllowlistConfigFilePath string
-}
+const (
+	// PASS is the string representation of "PASS".
+	PASS = "PASS"
+	// FAIL is the string representation of "FAIL".
+	FAIL = "FAIL"
+)
 
-// MissingConfigFieldError is returned from Config.Validate() if any required
-// fields are missing.
-type MissingConfigFieldError string
-
-func (e MissingConfigFieldError) Error() string {
-	return fmt.Sprintf("missing config field: %s", string(e))
-}
-
-// Validate checks that the Config is valid.
-func (c Config) Validate() error {
-	if c.RepoPath == "" {
-		return MissingConfigFieldError("RepoPath")
-	}
-	if c.CommitRef == "" {
-		return MissingConfigFieldError("CommitRef")
-	}
-	if c.APIToken == "" {
-		return MissingConfigFieldError("APIToken")
-	}
-	if c.APIBaseURL == "" {
-		return MissingConfigFieldError("APIBaseURL")
-	}
-	return nil
-}
-
-// Run the action. Returns nil if the commit was properly signed by a GPG key
-// authorized for the committer.
-func Run(ctx context.Context, cfg Config) error {
-	err := cfg.Validate()
-	if err != nil {
-		return fmt.Errorf("invalid configuration: %w", err)
+// Run the action. Returns an Outcome that caputure's the results of the action.
+//
+// The action can pass in one of the following ways:
+//
+// 1. Bypassing signature verification through an email address on the allowlist (if configured).
+// 2. Properly signed by a third party key on the allowlist (if configured).
+// 3. Properly signed by a GPG key authorized for the committer.
+func Run(ctx context.Context, cfg Config) *Outcome {
+	o := &Outcome{Version: "1.0.0", Repository: cfg.Repository, Errors: []OutcomeError{}}
+	errs := cfg.Validate()
+	if len(errs) > 0 {
+		o.SetErrors(errs...)
+		o.SetResultAndDescription(FAIL, "Invalid config. See errors for details.")
+		return o
 	}
 
 	log.Printf("Verifying commit with ref %q in %q", cfg.CommitRef, cfg.RepoPath)
 
 	commit, err := GetCommit(cfg.RepoPath, cfg.CommitRef)
 	if err != nil {
-		return fmt.Errorf("failed to get commit: %w", err)
+		o.SetErrors(err)
+		o.SetResultAndDescription(FAIL, "Failed to get commit. See errors for details.")
+		return o
 	}
+	o.SetCommit(commit)
 
 	log.Printf("\nCommit:\n================\n%s\n================\n\n", PrettyPrintCommit(commit))
 
-	committerEmail := commit.Committer.Email
-
-	// Fetch allowlist.
-	allowlist, err := GetAllowlist(cfg.AllowlistConfigFilePath)
+	// Load the allowlist.
+	allowlist, err := LoadAllowlist(cfg.AllowlistConfigFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to get allowlist: %w", err)
+		o.SetErrors(err)
+		o.SetResultAndDescription(FAIL, "Failed to load the allowlist. See errors for details.")
+		return o
 	}
 
-	// If allowlist contains list of email addresses, verify commit by email address.
-	if len(allowlist.EmailAddresses) > 0 {
-		log.Printf("Checking email address allowlist for bypassing signature verification\n")
-		onAllowlistEmails := verifyCommitByEmailAddress(committerEmail, allowlist.EmailAddresses)
-		if onAllowlistEmails {
+	// Parse out valid allowlist email addresses and keys for the specified
+	// repository. Adds any parsing errors to the outcome but does not return
+	// at this step.
+	repoAllowlist, errs := GetAllowlistForRepo(allowlist, cfg.Repository)
+	if len(errs) > 0 {
+		o.SetErrors(errs...)
+	}
+
+	committerEmail := commit.Committer.Email
+
+	// If the repo allowlist contains email addresses, attempt to bypass signature verification
+	// through the email address.
+	if len(repoAllowlist.EmailAddresses) > 0 {
+		log.Printf("Checking signature verification bypass with email address from the allowlist\n\n")
+		verified := verifyCommitByEmailAddress(committerEmail, repoAllowlist.EmailAddresses)
+		if verified {
 			log.Printf("Committer email: \"%s\" is on email address allowlist, bypassing signature verification\n\n", committerEmail)
-			return nil
+			o.SetVerificationDetailsEmailAddress(committerEmail)
+			o.SetResultAndDescription(PASS, "Bypassed signature verification with an email address from the allowlist.")
+			return o
 		}
 		log.Printf("Committer email: \"%s\" is not on email address allowlist, continuing signature verification\n\n", committerEmail)
 	}
 
-	// If allowlist contains third party keys, attempt to verify signature through the keys.
-	if len(allowlist.ThirdPartyKeys) > 0 {
-		log.Printf("Verifying commit signature with third party keys\n\n")
-		pass, err := verifyCommitSignatureByThirdPartyKeys(allowlist.ThirdPartyKeys, commit)
-		if err != nil {
-			log.Printf("Failed to verify commit by third party keys: %v\n\n", err)
-		}
-		if pass {
-			log.Printf("Commit is signed by authorized third party key\n\n")
-			return nil
-		}
-		log.Printf("No third party keys validated signature, continuing signature verification\n\n")
-	}
-
-	// Signature verification through BI cloud.
-	if commit.PGPSignature == "" {
-		return errors.New("commit is not signed")
+	// Validate that a signature exists for third party key validation and BI cloud verification.
+	if commit.PGPSignature != "" {
+		o.SetErrors(errors.New("commit is not signed"))
+		o.SetResultAndDescription(FAIL, "Commit is not signed. See errors for details.")
+		return o
 	}
 
 	issuerKeyID, err := ParseSignatureIssuerKeyID(commit.PGPSignature)
 	if err != nil {
-		return fmt.Errorf("failed to parse signature: %w", err)
+		o.SetErrors(err)
+		o.SetResultAndDescription(FAIL, "Failed to parse signature. See errors for details.")
+		return o
+	}
+	o.Commit.SignatureKeyID = issuerKeyID
+
+	payload, err := EncodedCommitWithoutSignature(commit)
+	if err != nil {
+		o.SetErrors(err)
+		o.SetResultAndDescription(FAIL, "Failed to encode commit. See errors for details.")
+		return o
 	}
 
-	log.Printf("Getting authorization for GPG key %q with committer email %q", issuerKeyID, committerEmail)
+	// If the repo allowlist contains third party keys, attempt to verify the signature through the keys.
+	if len(repoAllowlist.ThirdPartyKeys) > 0 {
+		log.Printf("Verifying commit signature with third party keys from the allowlist\n\n")
+		tpk, pass := verifyCommitSignatureByThirdPartyKeys(repoAllowlist.ThirdPartyKeys, payload, commit)
+		if pass {
+			log.Printf("Commit is signed by authorized third party key\n\n")
+			o.SetVerificationDetailsThirdPartyKey(tpk)
+			o.SetResultAndDescription(PASS, "Signature verified by a third party key from the allowlist.")
+			return o
+		}
+		log.Printf("No third party keys validated signature, continuing signature verification\n\n")
+	}
 
+	log.Printf("Getting authorization for GPG key %q with committer email address %q\n\n", issuerKeyID, committerEmail)
+
+	// Attempt to verify signature through BI cloud.
 	authorization, err := APIClient{
 		HTTPClient: http.DefaultClient,
 		APIToken:   cfg.APIToken,
 		APIBaseURL: cfg.APIBaseURL,
 	}.GetAuthorization(ctx, issuerKeyID, committerEmail)
 	if err != nil {
-		return fmt.Errorf("failed to get authorization: %w", err)
+		o.SetErrors(fmt.Errorf("failed to get authorization to BI cloud: %w", err))
+		o.SetResultAndDescription(FAIL, "Failed to get authorization to BI cloud. See errors for details.")
+		return o
 	}
 
 	log.Printf("\nAPI response:\n================\n%s\n================\n\n", authorization.PrettyPrint())
 
 	err = Verify(commit, authorization)
 	if err != nil {
-		return fmt.Errorf("failed to verify commit with authorization: %w", err)
+		o.SetErrors(fmt.Errorf("failed to verify commit with authorization: %w", err))
+		o.SetResultAndDescription(FAIL, "Failed to verify commit. See errors for details.")
+		return o
 	}
 
 	log.Println("Commit is signed by an authorized Beyond Identity user")
-	return nil
-}
-
-func Verify(commit *object.Commit, authorization *Authorization) error {
-	if !authorization.Authorized {
-		return fmt.Errorf("authorization denied: %s", authorization.Message)
-	}
-
-	err := VerifyCommitSignature(authorization.GPGKey.Base64Key, commit)
-	if err != nil {
-		return fmt.Errorf("signature verification failed: %w", err)
-	}
-
-	return nil
+	o.SetVerificationDetailsBIManagedKey(issuerKeyID, committerEmail)
+	o.SetResultAndDescription(PASS, "Signature verified by Beyond Identity.")
+	return o
 }

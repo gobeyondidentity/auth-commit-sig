@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
@@ -21,12 +24,21 @@ func main() {
 		CommitRef:               *ref,
 		APIToken:                getRequiredEnv("API_TOKEN"),
 		APIBaseURL:              getOptionalEnv("API_BASE_URL", "https://api.byndid.com/key-mgmt"),
+		Repository:              getRequiredEnv("REPOSITORY"),
 		AllowlistConfigFilePath: getOptionalEnv("ALLOWLIST_CONFIG_FILE_PATH", ""),
 	}
 
-	err := action.Run(context.Background(), cfg)
+	outcome := action.Run(context.Background(), cfg)
+	outcomeJSON, err := jsonMarshal(outcome)
 	if err != nil {
-		log.Println("Error from action:", err)
+		log.Printf("Failed to marshal outcome JSON: %v", err)
+		os.Exit(1)
+	}
+	log.Printf("Outcome JSON: \n%s", string(outcomeJSON))
+	stdOut := []byte(fmt.Sprintf(`echo "::set-output name=outcome::%s"`, string(outcomeJSON)))
+	_, err = os.Stdout.Write(stdOut)
+	if err != nil {
+		log.Printf("Failed to set output for this step: %v", err)
 		os.Exit(1)
 	}
 }
@@ -46,4 +58,13 @@ func getOptionalEnv(name string, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+func jsonMarshal(t interface{}) ([]byte, error) {
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "    ")
+	err := encoder.Encode(t)
+	return buffer.Bytes(), err
 }

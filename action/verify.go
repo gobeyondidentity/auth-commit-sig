@@ -10,6 +10,20 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
+// Verify verifies a commit.
+func Verify(commit *object.Commit, authorization *Authorization) error {
+	if !authorization.Authorized {
+		return fmt.Errorf("authorization denied: %s", authorization.Message)
+	}
+
+	err := VerifyCommitSignature(authorization.GPGKey.Base64Key, commit)
+	if err != nil {
+		return fmt.Errorf("signature verification failed: %w", err)
+	}
+
+	return nil
+}
+
 // VerifyCommitSignature accepts a commit object and a base64-encoded PGP public
 // key. Parses the key into a temporary key ring, then checks that the signature
 // attached to the commit is valid.
@@ -37,43 +51,26 @@ func verifyCommitByEmailAddress(committerEmailAddress string, allowlistEmailAddr
 			return true
 		}
 	}
-
 	return false
 }
 
-// verifyCommitSignatureByThirdPartyKeys accepts a commit object and a list of armored
-// PGP public keys. Parses the keys one by one into a temporary key ring, then checks
-// that the signature attached to the commit is valid. Returns true if the signature is
-// validated by a key within the list.
-//
-// Armored simply means the format of the key is base64 encoded data, alongside
-// a plaintext header + footer:
-//
-// -----BEGIN PGP PUBLIC KEY BLOCK-----
-//
-// 9T6cSwE9PGVUwxYRFvrOVfEdtW2rGpQf46blrSRtTrc=
-// ...truncated
-//
-// -----END PGP PUBLIC KEY BLOCK-----
-func verifyCommitSignatureByThirdPartyKeys(publicKeys []string, commit *object.Commit) (bool, error) {
-	payload, err := EncodedCommitWithoutSignature(commit)
-	if err != nil {
-		return false, fmt.Errorf("failed to encode commit: %w", err)
-	}
-
-	for _, key := range publicKeys {
-		pubKeyBase64 := base64.StdEncoding.EncodeToString([]byte(key))
-		keyRing, err := openpgp.ReadArmoredKeyRing(base64.NewDecoder(base64.StdEncoding, strings.NewReader(pubKeyBase64)))
-		if err != nil {
-			log.Printf("Failed to parse public key: \n\n%s\n\nwith error: %v", key, err)
-		} else {
-			_, err = openpgp.CheckArmoredDetachedSignature(keyRing, strings.NewReader(payload), strings.NewReader(commit.PGPSignature), nil)
-			if err == nil {
-				log.Printf("Commit validated by public key: \n\n%s\n\n", key)
-				return true, nil
-			}
+// verifyCommitSignatureByThirdPartyKeys accepts a commit object and a list of
+// keyRings. Returns true if the signature attached to the commit object is
+// validated by a key within the list; otherwise returns false.
+func verifyCommitSignatureByThirdPartyKeys(keyRings []openpgp.EntityList, payload string, commit *object.Commit) (*ThirdPartyKey, bool) {
+	for _, key := range keyRings {
+		signer, err := openpgp.CheckArmoredDetachedSignature(key, strings.NewReader(payload), strings.NewReader(commit.PGPSignature), nil)
+		if err == nil {
+			keyID := fmt.Sprintf("%X", signer.PrimaryKey.KeyId)
+			fp := base64.StdEncoding.EncodeToString(signer.PrimaryKey.Fingerprint)
+			userID := signer.PrimaryIdentity().Name
+			log.Printf("Signature made using RSA key %X\nand fingerprint %s\nfrom %s\n\n", keyID, fp, userID)
+			return &ThirdPartyKey{
+				KeyID:       keyID,
+				Fingerprint: fp,
+				UserID:      userID,
+			}, true
 		}
 	}
-
-	return false, nil
+	return nil, false
 }

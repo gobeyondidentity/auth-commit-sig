@@ -18,17 +18,18 @@ inputs:
     default: "HEAD"
   allowlist_config_file_path:
     description: >
-      The file path where the allowlist config file is stored from the allowlist 
-      repo root. See README on how to configure allowlist.
+      The file path where the allowlist config file is stored. See README on 
+      how to configure and fetch allowlist.
     required: false
 
 
 runs:
   using: docker
-  image: docker://docker.io/byndid/auth-commit-sig:0.7.0-rc8
+  image: docker://docker.io/byndid/auth-commit-sig:1.0.0-rc2
   env:
     API_TOKEN: ${{ inputs.api_token }}
     ALLOWLIST_CONFIG_FILE_PATH: ${{ inputs.allowlist_config_file_path }}
+    REPOSITORY: $${{ inputs.repository }}
   args:
     - "-ref=${{ inputs.ref }}"
 

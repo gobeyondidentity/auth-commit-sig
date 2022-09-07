@@ -41,20 +41,6 @@ Qp0Ij4pGLgG+PXYrhj/riYnrRhXwpn4=
 			expectedErr: "signature verification failed: openpgp: signature made by unknown entity",
 		},
 		{
-			name:      "bad_payload",
-			base64Key: `mFIEYMI4hhMIKoZIzj0DAQcCAwS+/+HuWZbnBnX6B/lfxZa14RKUvfQKV/gh5Pa0HVRXeBTmNLgsVv7ZDOFf2oLNq0QMYv5B9hK4LSwTogcDuP8atCxGb3JkIEh1cmxleSA8Zm9yZC5odXJsZXlAYmV5b25kaWRlbnRpdHkuY29tPoiQBBMTCAA4FiEEQxejlddV0d9TMIqf53KhkcHu3sUFAmDCOIYCGwMFCwkIBwIGFQoJCAsCBBYCAwECHgECF4AACgkQ53KhkcHu3sVKgQEAp7UdpYP4dSubZQoChsK+QrH96+a4Q3yPyaHsOreDsvIBAP9RcKj9RSVlcDXuUHYfYr25RpvRxAQkuLqbkmusKrdk`,
-			armoredSignature: `-----BEGIN PGP SIGNATURE-----
-
-iHUEABMIAB0WIQRDF6OV11XR31Mwip/ncqGRwe7exQUCYOroGQAKCRDncqGRwe7e
-xQJTAQC1YZqxt3Bf3zkHlUOC9nItItIZF+UZH7B3orT6TEq7yAEAuHKMgVnRXVf5
-Qp0Ij4pGLgG+PXYrhj/riYnrRhXwpn4=
-=VsS4
------END PGP SIGNATURE-----
-`,
-			payload:     "This is not the correct payload.\n",
-			expectedErr: "signature verification failed: openpgp: invalid signature: hash tag doesn't match",
-		},
-		{
 			name:      "simple",
 			base64Key: `mFIEYMI4hhMIKoZIzj0DAQcCAwS+/+HuWZbnBnX6B/lfxZa14RKUvfQKV/gh5Pa0HVRXeBTmNLgsVv7ZDOFf2oLNq0QMYv5B9hK4LSwTogcDuP8atCxGb3JkIEh1cmxleSA8Zm9yZC5odXJsZXlAYmV5b25kaWRlbnRpdHkuY29tPoiQBBMTCAA4FiEEQxejlddV0d9TMIqf53KhkcHu3sUFAmDCOIYCGwMFCwkIBwIGFQoJCAsCBBYCAwECHgECF4AACgkQ53KhkcHu3sVKgQEAp7UdpYP4dSubZQoChsK+QrH96+a4Q3yPyaHsOreDsvIBAP9RcKj9RSVlcDXuUHYfYr25RpvRxAQkuLqbkmusKrdk`,
 			armoredSignature: `-----BEGIN PGP SIGNATURE-----

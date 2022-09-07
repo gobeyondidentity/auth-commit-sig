@@ -1,0 +1,31 @@
+email_addresses:
+  # `repositories` not defined, can bypass signature verification for _any_ repository.
+  - email_address: user1@company.com
+
+  # `repositories` defined, can bypass signature verification _only_ for repository_A and repository_B.
+  - email_address: user2@company.com
+    repositories:
+      - repository_A
+      - repository_B
+      
+third_party_keys:
+  # `repositories` not defined, can be used for signature verification for _any_ repository.
+  - key: |
+      -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+      m3IEYr73lBMIKoZIzj01AQcCAwT1gCXHMjKP6EWgtzJNxpkfFWhpK4dsV1dfbzRz
+      ...truncated
+
+      -----END PGP PUBLIC KEY BLOCK-----
+
+  # `repositories` defined, can be used for signature verification _only_ for repository_C and repository_D.
+  - key: |
+      -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+      t3IEYr738sG78d7SD01AQcCAwT1gCXHMjKP6EWgtzJNxpkfF01AQcCAwT11dfbzRx
+      ...truncated
+
+      -----END PGP PUBLIC KEY BLOCK-----
+    repositories:
+      - repository_C
+      - repository_D
