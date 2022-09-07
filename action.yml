@@ -26,10 +26,16 @@ inputs:
       how to configure and fetch allowlist.
     required: false
 
+outputs:
+  outcome:
+    description: >
+      The outcome is a JSON blob containing details about the outcome of the action. It 
+      contains information about the commit, if signature verification was successful,
+      if an allowlist email address or third party key was used, errors, and other details.
 
 runs:
   using: docker
-  image: docker://docker.io/byndid/auth-commit-sig:1.0.0-rc5
+  image: docker://docker.io/byndid/auth-commit-sig:1.0.0-rc6
   env:
     API_TOKEN: ${{ inputs.api_token }}
     ALLOWLIST_CONFIG_FILE_PATH: ${{ inputs.allowlist_config_file_path }}

@@ -64,7 +64,7 @@ func verifyCommitSignatureByThirdPartyKeys(keyRings []openpgp.EntityList, payloa
 			keyID := fmt.Sprintf("%X", signer.PrimaryKey.KeyId)
 			fp := base64.StdEncoding.EncodeToString(signer.PrimaryKey.Fingerprint)
 			userID := signer.PrimaryIdentity().Name
-			log.Printf("Signature made using RSA key %X\nand fingerprint %s\nfrom %s\n\n", keyID, fp, userID)
+			log.Printf("Signature made using RSA key %s\nand fingerprint %s\nfrom %s\n\n", keyID, fp, userID)
 			return &ThirdPartyKey{
 				KeyID:       keyID,
 				Fingerprint: fp,

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 
 	"byndid/auth-commit-sig/action"
 )
@@ -35,15 +34,16 @@ func main() {
 		log.Printf("Failed to marshal outcome JSON: %v", err)
 		os.Exit(1)
 	}
-	log.Printf("Outcome JSON: \n%s", string(outcomeJSON))
-	setOutputCmd := fmt.Sprintf(`echo "::set-output name=outcome::%s"`, string(outcomeJSON))
 
-	cmd := exec.Command(setOutputCmd)
-	err = cmd.Run()
+	prettyOutcomeJSON, err := prettyString(string(outcomeJSON))
 	if err != nil {
-		log.Printf("Failed to set output for this step: %v", err)
+		log.Printf("Failed to pretty outcome JSON: %v", err) // shouldn't happen
 		os.Exit(1)
+	} else {
+		log.Printf("Outcome JSON: \n%s", prettyOutcomeJSON)
 	}
+
+	fmt.Printf(`::set-output name=outcome::%s`, outcomeJSON)
 }
 
 func getRequiredEnv(name string) string {
@@ -67,7 +67,14 @@ func jsonMarshal(t interface{}) ([]byte, error) {
 	buffer := &bytes.Buffer{}
 	encoder := json.NewEncoder(buffer)
 	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", "    ")
 	err := encoder.Encode(t)
 	return buffer.Bytes(), err
+}
+
+func prettyString(str string) (string, error) {
+	var prettyJSON bytes.Buffer
+	if err := json.Indent(&prettyJSON, []byte(str), "", "    "); err != nil {
+		return "", err
+	}
+	return prettyJSON.String(), nil
 }
