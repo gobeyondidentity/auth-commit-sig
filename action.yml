@@ -29,11 +29,11 @@ inputs:
 
 runs:
   using: docker
-  image: docker://docker.io/byndid/auth-commit-sig:1.0.0-rc3
+  image: docker://docker.io/byndid/auth-commit-sig:1.0.0-rc4
   env:
     API_TOKEN: ${{ inputs.api_token }}
     ALLOWLIST_CONFIG_FILE_PATH: ${{ inputs.allowlist_config_file_path }}
-    REPOSITORY: $${{ inputs.repository }}
+    REPOSITORY: ${{ inputs.repository }}
   args:
     - "-ref=${{ inputs.ref }}"
 
