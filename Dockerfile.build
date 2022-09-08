@@ -2,7 +2,7 @@ FROM golang:1.18
 
 WORKDIR /src
 
-COPY vendor vendor
+COPY custom-mods custom-mods
 COPY go.mod go.sum ./
 RUN go mod download
 

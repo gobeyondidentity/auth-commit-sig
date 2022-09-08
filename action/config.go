@@ -19,6 +19,7 @@ type Config struct {
 	// Required.
 	APIBaseURL string
 	// Repository is the name of the repository that the action is being performed on.
+	// This is also used to match against the repositories listed on the allowlist.
 	// Required.
 	Repository string
 	// AllowlistConfigFilePath is a path to the file containing the allowlist
@@ -49,8 +50,8 @@ func (c Config) Validate() []error {
 	if c.APIBaseURL == "" {
 		errs = append(errs, MissingConfigFieldError("APIBaseURL"))
 	}
-	if err := Repo(c.Repository); err != nil {
-		errs = append(errs, err)
+	if c.Repository == "" {
+		errs = append(errs, MissingConfigFieldError("Repository"))
 	}
 	return errs
 }

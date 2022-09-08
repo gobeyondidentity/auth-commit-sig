@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           # Path to allowlist repository in the format (owner/repo_name).
-          # If it is the same respository as above, can skip this step.
+          # If it is the same repository as above, can skip this step.
           repository: "gobeyondidentity/commit-signing-allowlist"
           # SSH Key for private repositories. If repo is public, can omit.
           # See https://docs.github.com/en/developers/overview/managing-deploy-keys#deploy-keys.
@@ -50,6 +50,7 @@ jobs:
           # https://docs.github.com/en/actions/security-guides/encrypted-secrets.
           api_token: ${{ secrets.BYNDID_KEY_MGMT_API_TOKEN }}
           # Repository which the signature verification action is performed on.
+          # This is also used to match against repositories listed on the allowlist.
           repository: "gobeyondidentity/auth-commit-sig"
           # If allowlist is configured, set this to the file path to the allowlist
           # configuration file starting from $GITHUB_WORKSPACE.
@@ -62,9 +63,10 @@ jobs:
           # See README for details on how to format this file.
           allowlist_config_file_path: "./allowlist-dir/allowlist.yaml" 
         # Echo outcome JSON to standard out.
+        # Outcome can be used in other steps as ${{ steps.signature-verification.outputs.outcome }}.
       - name: Print outcome
         run: |
-          echo "${{ steps.signature-verification.outputs.outcome }}"
+          echo '${{ steps.signature-verification.outputs.outcome }}'
     # Output of job. Can be accessed in other jobs as ${{ needs.auth-commit-sig.outputs.outcome }}.
     outputs:
       outcome: ${{ steps.signature-verification.outputs.outcome }}

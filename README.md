@@ -14,9 +14,12 @@ GitHub Action for authorizing a Beyond Identity user to sign git commits and
 verifying those signatures. The action enforces that all commits are signed by
 authorized users in your organization's Beyond Identity directory.
 
-Additionally, an allowlist can be configured for select committer email addresses
-to bypass signature verification or for verification by third party keys. See section on
-[Allowlist](#allowlist).
+Additionally, an allowlist can be configured for
+
+1. select committer email addresses to bypass signature verification
+2. select third party keys used for signature verification
+
+See section on [Allowlist](#allowlist).
 
 ## Usage
 
@@ -55,11 +58,13 @@ jobs:
           # https://docs.github.com/en/actions/security-guides/encrypted-secrets.
           api_token: ${{ secrets.BYNDID_KEY_MGMT_API_TOKEN }}
           # Repository which the signature verification action is performed on.
+          # This is also used to match against repositories listed on the allowlist.
           repository: "gobeyondidentity/auth-commit-sig"
         # Echo outcome JSON to standard out.
+        # Outcome can be used in other steps as ${{ steps.signature-verification.outputs.outcome }}.
       - name: Print outcome
         run: |
-          echo "${{ steps.signature-verification.outputs.outcome }}"
+          echo '${{ steps.signature-verification.outputs.outcome }}'
     # Output of job. Can be accessed in other jobs as ${{ needs.auth-commit-sig.outputs.outcome }}.
     outputs:
       outcome: ${{ steps.signature-verification.outputs.outcome }}
@@ -81,11 +86,11 @@ If the email address of the committer is on the allowlist, the action will bypas
 verification. Otherwise, it will continue with the regular signature verification process.
 
 If there are third party keys on the allowlist, the action will attempt to verify
-the signature using all the configured keys. If verification succeeds, the action will
+the signature using all those keys. If verification succeeds, the action will
 pass. If verification fails, the action continues with the regular signature verification
 process.
 
-The `repositories` parameter attached to the email addresses and third party keys is optional. If not provided, 
+The `repositories` parameter attached to the email addresses and third party keys is optional. If not provided,
 the email address or third party key will be used on ALL repositories the action is run on.
 
 ### Actions Workflow
@@ -93,8 +98,10 @@ the email address or third party key will be used on ALL repositories the action
 Some additional steps added to the action workflow.
 
 1. In a repository, create an allowlist YAML file. The repository _can_ be the same repository
-   where the action is registered, or it can be a separate repository. An example allowlist file
-   called `allowlist_example.yaml` can be found within this repository and below.
+   where the action is registered, or it can be a separate repository. We recommend it be stored in
+   seperate repo that has strict access controls.
+
+   An example allowlist file called `allowlist_example.yaml` can be found within this repository and below.
 
 ### Example Allowlist YAML file - allowlist_example.yaml
 
@@ -133,14 +140,14 @@ third_party_keys:
 ```
 
 2. Add an additional `Checkout Allowlist repository` step the workflow configuration. This step
-   checks out repo where the allowlist YAML file is stored and stores the files from that repo locally
+   checks out the repo where the allowlist YAML file is stored and stores the files from that repo locally
    in the action workspace under `path`. If your allowlist is in the same repository where the action
    is registered, this step can be skipped.
 
-   If the allowlist repository is private, should set up an SSH Key for cloning.
+   If the allowlist repository is private, you should set up an SSH Key for cloning.
    See [Deploy Keys](https://docs.github.com/en/developers/overview/managing-deploy-keys#deploy-keys).
 
-   This should be set as an [actions secret](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
+   This SSH Key should be set as an [actions secret](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
    called `ALLOWLIST_REPO_SSH_PRIV_KEY` in the repository where the action is run or fetched from a secrets manager.
 
 3. Add additional variables to the `Authorize with Beyond Identity` step.
@@ -148,7 +155,7 @@ third_party_keys:
 - `allowlist_config_file_path`: File path to the allowlist configuration file from actions workspace.
   - If it is from a different repository, this variable should be prefixed with `./` and the `path` from Step 2.
     - Ex. `./{path}/{path_to_allowlist}`
-  - If it is the same repository as the action, it is just the path to the allowlist configuration file.
+  - If it is the same repository as the action, this variable should be prefiexed with `./` and the path to the allowlist configuration file.
     - Ex. `./{path_to_allowlist}`
 
 ### Actions Workflow with Allowlist
@@ -182,7 +189,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           # Path to allowlist repository in the format (owner/repo_name).
-          # If it is the same respository as above, can skip this step.
+          # If it is the same repository as above, can skip this step.
           repository: "gobeyondidentity/commit-signing-allowlist"
           # SSH Key for private repositories. If repo is public, can omit.
           # See https://docs.github.com/en/developers/overview/managing-deploy-keys#deploy-keys.
@@ -206,6 +213,7 @@ jobs:
           # https://docs.github.com/en/actions/security-guides/encrypted-secrets.
           api_token: ${{ secrets.BYNDID_KEY_MGMT_API_TOKEN }}
           # Repository which the signature verification action is performed on.
+          # This is also used to match against repositories listed on the allowlist.
           repository: "gobeyondidentity/auth-commit-sig"
           # If allowlist is configured, set this to the file path to the allowlist
           # configuration file starting from $GITHUB_WORKSPACE.
@@ -218,9 +226,10 @@ jobs:
           # See README for details on how to format this file.
           allowlist_config_file_path: "./allowlist-dir/allowlist.yaml"
         # Echo outcome JSON to standard out.
+        # Outcome can be used in other steps as ${{ steps.signature-verification.outputs.outcome }}.
       - name: Print outcome
         run: |
-          echo "${{ steps.signature-verification.outputs.outcome }}"
+          echo '${{ steps.signature-verification.outputs.outcome }}'
     # Output of job. Can be accessed in other jobs as ${{ needs.auth-commit-sig.outputs.outcome }}.
     outputs:
       outcome: ${{ steps.signature-verification.outputs.outcome }}
@@ -229,12 +238,12 @@ jobs:
 ## Outcome output
 
 When the action is complete, it returns an output that is a JSON blob containing information about the
-results of the action. It contains information about the commit, if signature verification was successful,
+results of the action. It contains info about the commit, if signature verification was successful,
 if an allowlist email address or third party key was used, errors, and other details.
 
-It is returned as an output of the step and can be accessed within the job as `${{ steps.signature-verification.outputs.outcome }}`.
+The outcome is returned as an output of the step and can be accessed within the job as `${{ steps.signature-verification.outputs.outcome }}`.
 
-It is returned as an output of the job and can be used in other jobs as `${{ needs.auth-commit-sig.outputs.outcome }}`
+The outcome is returned as an output of the job and can be used in other jobs as `${{ needs.auth-commit-sig.outputs.outcome }}`
 
 See [Defining outputs for jobs](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs) for more
 information.
@@ -250,7 +259,7 @@ information.
   "commit": {
     "commit_hash": "7f1927513d02f546ed50579de7192c181836ea23",
     "tree_hash": "d742502776eb874cba1605b768ad438810ecf911",
-    "parent_hash": "12cf190ced71c3d23107d90641b361b9edcc41f6",
+    "parent_hashes": ["12cf190ced71c3d23107d90641b361b9edcc41f6"],
     "author": {
       "name": "John Doe",
       "email_address": "john@doe.com",
@@ -268,7 +277,7 @@ information.
   "desc": "Signature verified by Beyond Identity.",
   "verification_details": {
     "verified_by": "BI_MANAGED_KEY",
-    "third_party_key": {
+    "bi_managed_key": {
       "key_id": "87A2691085B4544E",
       "email_address": "john@doe.com"
     }
@@ -286,7 +295,7 @@ information.
   "commit": {
     "commit_hash": "7f1927513d02f546ed50579de7192c181836ea23",
     "tree_hash": "d742502776eb874cba1605b768ad438810ecf911",
-    "parent_hash": "12cf190ced71c3d23107d90641b361b9edcc41f6",
+    "parent_hashes": ["12cf190ced71c3d23107d90641b361b9edcc41f6"],
     "author": {
       "name": "Jane Doe",
       "email_address": "jane@doe.com",
@@ -323,7 +332,7 @@ information.
   "commit": {
     "commit_hash": "7f1927513d02f546ed50579de7192c181836ea23",
     "tree_hash": "d742502776eb874cba1605b768ad438810ecf911",
-    "parent_hash": "12cf190ced71c3d23107d90641b361b9edcc41f6",
+    "parent_hashes": ["12cf190ced71c3d23107d90641b361b9edcc41f6"],
     "author": {
       "name": "Jackie Doe",
       "email_address": "jackie@doe.com",
@@ -334,7 +343,7 @@ information.
       "email_address": "jackie@doe.com",
       "timestamp": "2022-09-05T13:58:12-04:00"
     },
-    "signed": true
+    "signed": false
   },
   "result": "FAIL",
   "desc": "Commit is not signed. See errors for details.",

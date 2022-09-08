@@ -15,15 +15,15 @@ const (
 	FAIL = "FAIL"
 )
 
-// Run the action. Returns an Outcome that caputure's the results of the action.
+// Run the action. Returns an Outcome that captures the results of the action.
 //
 // The action can pass in one of the following ways:
 //
 // 1. Bypassing signature verification through an email address on the allowlist (if configured).
 // 2. Properly signed by a third party key on the allowlist (if configured).
-// 3. Properly signed by a GPG key authorized for the committer.
+// 3. Properly signed by a Beyond Identity managed GPG key authorized for the committer.
 func Run(ctx context.Context, cfg Config) *Outcome {
-	o := &Outcome{Version: "1.0.0", Repository: cfg.Repository, Errors: []OutcomeError{}}
+	o := &Outcome{Version: version, Repository: cfg.Repository, Errors: []OutcomeError{}}
 	errs := cfg.Validate()
 	if len(errs) > 0 {
 		o.SetErrors(errs...)
@@ -135,6 +135,6 @@ func Run(ctx context.Context, cfg Config) *Outcome {
 
 	log.Println("Commit is signed by an authorized Beyond Identity user")
 	o.SetVerificationDetailsBIManagedKey(issuerKeyID, committerEmail)
-	o.SetResultAndDescription(PASS, "Signature verified by Beyond Identity.")
+	o.SetResultAndDescription(PASS, "Signature verified by a Beyond Identity managed key.")
 	return o
 }

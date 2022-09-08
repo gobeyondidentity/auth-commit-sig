@@ -17,6 +17,7 @@ func main() {
 
 	path := flag.String("path", ".", "Path to the git repository")
 	ref := flag.String("ref", "HEAD", "Commit reference to check")
+	ghOut := flag.Bool("github-output", false, "Flag to output outcome to a github action output.")
 	flag.Parse()
 
 	cfg := action.Config{
@@ -35,15 +36,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Pretty print JSON in logs.
 	prettyOutcomeJSON, err := prettyString(string(outcomeJSON))
 	if err != nil {
-		log.Printf("Failed to pretty outcome JSON: %v", err) // shouldn't happen
+		log.Printf("Failed to pretty outcome JSON: %v", err)
 		os.Exit(1)
 	} else {
 		log.Printf("Outcome JSON: \n%s", prettyOutcomeJSON)
 	}
 
-	fmt.Printf(`::set-output name=outcome::%s`, outcomeJSON)
+	// If github-outfit is true, produce output.
+	if *ghOut {
+		fmt.Printf(`::set-output name=outcome::%s`, outcomeJSON)
+	}
 }
 
 func getRequiredEnv(name string) string {

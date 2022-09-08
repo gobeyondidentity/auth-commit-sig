@@ -12,7 +12,8 @@ inputs:
     required: true
   repository:
     description: >
-      The repository which the signature verification action is performed on.
+      The repository which the signature verification action is performed on. This 
+      is also used to match against the repositories listed on the allowlist.
     required: true
   ref:
     description: >
@@ -35,13 +36,17 @@ outputs:
 
 runs:
   using: docker
-  image: docker://docker.io/byndid/auth-commit-sig:1.0.0-rc7
+  image: docker://docker.io/byndid/auth-commit-sig:1.0.0-rc8
   env:
     API_TOKEN: ${{ inputs.api_token }}
     ALLOWLIST_CONFIG_FILE_PATH: ${{ inputs.allowlist_config_file_path }}
     REPOSITORY: ${{ inputs.repository }}
   args:
     - "-ref=${{ inputs.ref }}"
+    - "-github-output=true"
+
+# 1. mode = github
+# 2. github-output=true
 
 branding:
   icon: user-check

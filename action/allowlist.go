@@ -13,7 +13,7 @@ import (
 // Allowlist is the struct containing two lists:
 //
 // 1. (EmailAddresses) Email addresses and the repositories that the
-// email can be used to bypass signature verification.
+// email address can be used to bypass signature verification.
 // 2. (ThirdPartyKeys) Third party keys and the repositories that the
 // third party key can be used for signature verification.
 //
