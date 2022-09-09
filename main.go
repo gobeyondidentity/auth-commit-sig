@@ -45,9 +45,9 @@ func main() {
 		log.Printf("Outcome JSON: \n%s", prettyOutcomeJSON)
 	}
 
-	// If github-outfit is true, produce output.
+	// If github-output is true, produce output.
 	if *ghOut {
-		fmt.Printf(`::set-output name=outcome::%s`, outcomeJSON)
+		fmt.Printf("::set-output name=outcome::%s\n", outcomeJSON)
 	}
 }
 
