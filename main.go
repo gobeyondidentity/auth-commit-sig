@@ -49,6 +49,14 @@ func main() {
 	if *ghOut {
 		fmt.Printf("::set-output name=outcome::%s\n", outcomeJSON)
 	}
+
+	// If result of action is FAIL, exit with error.
+	if outcome.Result == action.FAIL {
+		log.Println("Action failed. See outcome for additional details.", err)
+		os.Exit(1)
+	}
+
+	log.Println("Action succeeded. See outcome for additional details.", err)
 }
 
 func getRequiredEnv(name string) string {
