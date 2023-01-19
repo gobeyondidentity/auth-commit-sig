@@ -47,7 +47,7 @@ func main() {
 
 	// If github-output is true, produce output.
 	if *ghOut {
-		fmt.Printf("::set-output name=outcome::%s\n", outcomeJSON)
+		fmt.Printf("outcome=%s >> $GITHUB_OUTPUT\n", outcomeJSON)
 	}
 
 	// If result of action is FAIL, exit with error.
