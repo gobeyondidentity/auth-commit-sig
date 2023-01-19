@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"byndid/auth-commit-sig/action"
 )
@@ -47,7 +48,7 @@ func main() {
 
 	// If github-output is true, produce output.
 	if *ghOut {
-		fmt.Printf("\"outcome=%s\" >> $GITHUB_OUTPUT\n", string(outcomeJSON))
+		fmt.Printf("\"outcome=%s\" >> $GITHUB_OUTPUT\n", strings.TrimSuffix(string(outcomeJSON), "\r\n"))
 	}
 
 	// If result of action is FAIL, exit with error.
