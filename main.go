@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 
 	"byndid/auth-commit-sig/action"
 )
@@ -48,14 +47,7 @@ func main() {
 
 	// If github-output is true, produce output.
 	if *ghOut {
-		fmt.Printf(`echo "outcome=%s" >> $GITHUB_OUTPUT`, outcomeJSON)
-
-		cmd := exec.Command("/bin/sh", "-c", fmt.Sprintf("echo \"TIMESTAMP=%s\" >> $GITHUB_OUTPUT", outcomeJSON))
-		cmd.Stdout = os.Stdout
-		if err := cmd.Run(); err != nil {
-			fmt.Printf("error executing shell command: %v", err.Error())
-			os.Exit(1)
-		}
+		fmt.Printf("echo \"outcome=%s\" >> $GITHUB_OUTPUT\n", outcomeJSON)
 	}
 
 	// If result of action is FAIL, exit with error.

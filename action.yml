@@ -36,7 +36,7 @@ outputs:
 
 runs:
   using: docker
-  image: docker://docker.io/byndid/auth-commit-sig:1.0.0-rc14
+  image: docker://docker.io/byndid/auth-commit-sig:1.0.0-rc15
   env:
     API_TOKEN: ${{ inputs.api_token }}
     ALLOWLIST_CONFIG_FILE_PATH: ${{ inputs.allowlist_config_file_path }}
