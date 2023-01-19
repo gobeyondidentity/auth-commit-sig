@@ -47,16 +47,16 @@ func main() {
 
 	// If github-output is true, produce output.
 	if *ghOut {
-		fmt.Printf(`"outcome=%s" >> $GITHUB_OUTPUT\n`, outcomeJSON)
+		fmt.Printf(`echo "outcome=%s" >> $GITHUB_OUTPUT`, outcomeJSON)
 	}
 
 	// If result of action is FAIL, exit with error.
 	if outcome.Result == action.FAIL {
-		log.Println("Action failed. See outcome for additional details.", err)
+		log.Println("Action failed. See outcome for additional details.")
 		os.Exit(1)
 	}
 
-	log.Println("Action succeeded. See outcome for additional details.", err)
+	log.Println("Action succeeded. See outcome for additional details.")
 }
 
 func getRequiredEnv(name string) string {
