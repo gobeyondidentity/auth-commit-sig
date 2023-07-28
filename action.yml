@@ -36,17 +36,13 @@ outputs:
 
 runs:
   using: docker
-  image: docker://docker.io/byndid/auth-commit-sig:1.0.0-rc21
+  image: docker://docker.io/byndid/auth-commit-sig:1.0.0-rc22
   env:
     API_TOKEN: ${{ inputs.api_token }}
     ALLOWLIST_CONFIG_FILE_PATH: ${{ inputs.allowlist_config_file_path }}
     REPOSITORY: ${{ inputs.repository }}
   args:
     - "-ref=${{ inputs.ref }}"
-    - "-github-output=true"
-
-# 1. mode = github
-# 2. github-output=true
 
 branding:
   icon: user-check

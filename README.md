@@ -60,14 +60,6 @@ jobs:
           # Repository which the signature verification action is performed on.
           # This is also used to match against repositories listed on the allowlist.
           repository: "gobeyondidentity/auth-commit-sig"
-        # Echo outcome JSON to standard out.
-        # Outcome can be used in other steps as ${{ steps.signature-verification.outputs.outcome }}.
-      - name: Print outcome
-        run: |
-          echo '${{ steps.signature-verification.outputs.outcome }}'
-    # Output of job. Can be accessed in other jobs as ${{ needs.auth-commit-sig.outputs.outcome }}.
-    outputs:
-      outcome: ${{ steps.signature-verification.outputs.outcome }}
 ```
 
 The `BYNDID_KEY_MGMT_API_TOKEN` should be set as an
@@ -75,9 +67,14 @@ The `BYNDID_KEY_MGMT_API_TOKEN` should be set as an
 in the repository or fetched from a secrets manager.
 
 ## Allowlist
+An allowlist can be configured for the github action to pass for users meeting certain criteria. 
+Currently two types of allowlists are supported, `merge_commit_allowlist` and `non_merge_commit_allowlist`, which are 
+based on `merge` and `non-merge` commits, respectively. The `merge` commits are the commits which have two or more parents. 
+For example, when merging a feature branch into the main (default) branch, git creates a merge commit on the main 
+branch, which is the result of the latest commits in both the main and feature branches.  For more information, see 
+[git merge](https://www.atlassian.com/git/tutorials/using-branches/git-merge).
 
-An allowlist can be configured for the github action to pass. The configuration contains the
-following two lists:
+Within each allowlist, the configuration contains the following two sublists:
 
 1. Email addresses and the repositories the email address can be used to bypass signature verification.
 2. Third party keys and the repositories that the third party key can be used for signature verification.
@@ -106,38 +103,91 @@ Some additional steps added to the action workflow.
 ### Example Allowlist YAML file - allowlist_example.yaml
 
 ```yaml
-email_addresses:
-  # `repositories` not defined, can bypass signature verification for _any_ repository.
-  - email_address: user1@company.com
+# Allowlist that is used when the commit is a merge commit.
+# A merge commit is defined as a commit containing two or more parents.
+# e.g. `git merge`
+merge_commit_allowlist:
+  email_addresses:
+    # `repositories` not defined, can bypass signature verification for _any_ repository.
+    - email_address: user1@company.com
 
-  # `repositories` defined, can bypass signature verification _only_ for repository_A and repository_B.
-  - email_address: user2@company.com
-    repositories:
-      - repository_A
-      - repository_B
+    # `repositories` defined, can bypass signature verification _only_ for repository_A and repository_B.
+    - email_address: user2@company.com
+      repositories:
+        - repository_A
+        - repository_B
 
-third_party_keys:
-  # `repositories` not defined, can be used for signature verification for _any_ repository.
-  - key: |
-      -----BEGIN PGP PUBLIC KEY BLOCK-----
+  third_party_keys:
+    # `repositories` not defined, can be used for signature verification for _any_ repository.
+    - key: |
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
 
-      m3IEYr73lBMIKoZIzj01AQcCAwT1gCXHMjKP6EWgtzJNxpkfFWhpK4dsV1dfbzRz
-      ...truncated
+        m3IEYr73lBMIKoZIzj01AQcCAwT1gCXHMjKP6EWgtzJNxpkfFWhpK4dsV1dfbzRz
+        ...truncated
 
-      -----END PGP PUBLIC KEY BLOCK-----
+        -----END PGP PUBLIC KEY BLOCK-----
 
-  # `repositories` defined, can be used for signature verification _only_ for repository_C and repository_D.
-  - key: |
-      -----BEGIN PGP PUBLIC KEY BLOCK-----
+    # `repositories` defined, can be used for signature verification _only_ for repository_C and repository_D.
+    - key: |
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
 
-      t3IEYr738sG78d7SD01AQcCAwT1gCXHMjKP6EWgtzJNxpkfF01AQcCAwT11dfbzRx
-      ...truncated
+        t3IEYr738sG78d7SD01AQcCAwT1gCXHMjKP6EWgtzJNxpkfF01AQcCAwT11dfbzRx
+        ...truncated
 
-      -----END PGP PUBLIC KEY BLOCK-----
-    repositories:
-      - repository_C
-      - repository_D
+        -----END PGP PUBLIC KEY BLOCK-----
+      repositories:
+        - repository_C
+        - repository_D
+
+# Allowlist that is used when the commit is not a merge commit.
+# Please see https://www.atlassian.com/git/tutorials/using-branches/git-merge for more info.
+non_merge_commit_allowlist:
+  email_addresses:
+    # `repositories` not defined, can bypass signature verification for _any_ repository.
+    - email_address: user1@company.com
+
+    # `repositories` defined, can bypass signature verification _only_ for repository_A and repository_B.
+    - email_address: user2@company.com
+      repositories:
+        - repository_A
+        - repository_B
+        - repository_X
+        - repository_Y
+
+    # `repositories` defined, can bypass signature verification _only_ for repository_A and repository_B.
+    - email_address: user3@company.com
+      repositories:
+        - repository_A
+        - repository_B
+
+  third_party_keys:
+    # `repositories` not defined, can be used for signature verification for _any_ repository.
+    - key: |
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+        m3IEYr73lBMIKoZIzj01AQcCAwT1gCXHMjKP6EWgtzJNxpkfFWhpK4dsV1dfbzRz
+        ...truncated
+
+        -----END PGP PUBLIC KEY BLOCK-----
+
+    # `repositories` defined, can be used for signature verification _only_ for repository_C and repository_D.
+    - key: |
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+        t3IEYr738sG78d7SD01AQcCAwT1gCXHMjKP6EWgtzJNxpkfF01AQcCAwT11dfbzRx
+        ...truncated
+
+        -----END PGP PUBLIC KEY BLOCK-----
+      repositories:
+        - repository_C
+        - repository_D
+
 ```
+In the example above, the email **user1@company.com** will be allowed to commit to any repository and bypass signature verification, regardless of 
+the type of the commit as the email is listed in both allowlists.  However, the email **user2@company.com** can only bypass signature verification in 
+repositories *repository_A* and *repository_B* when making merge or non-merge commits. **user2@company.com** will also be able to 
+make unverified non-merge commits to *repository_X* and *repository_Y*. The email **user3@company** is allowed to bypass signature 
+verification when making non-merge commits to *repository_A* and *repository_B* only. 
 
 2. Add an additional `Checkout Allowlist repository` step the workflow configuration. This step
    checks out the repo where the allowlist YAML file is stored and stores the files from that repo locally
@@ -225,28 +275,13 @@ jobs:
           # Ex. `./{path_to_allowlist}`
           # See README for details on how to format this file.
           allowlist_config_file_path: "./allowlist-dir/allowlist.yaml"
-        # Echo outcome JSON to standard out.
-        # Outcome can be used in other steps as ${{ steps.signature-verification.outputs.outcome }}.
-      - name: Print outcome
-        run: |
-          echo '${{ steps.signature-verification.outputs.outcome }}'
-    # Output of job. Can be accessed in other jobs as ${{ needs.auth-commit-sig.outputs.outcome }}.
-    outputs:
-      outcome: ${{ steps.signature-verification.outputs.outcome }}
 ```
 
 ## Outcome output
 
-When the action is complete, it returns an output that is a JSON blob containing information about the
-results of the action. It contains info about the commit, if signature verification was successful,
-if an allowlist email address or third party key was used, errors, and other details.
-
-The outcome is returned as an output of the step and can be accessed within the job as `${{ steps.signature-verification.outputs.outcome }}`.
-
-The outcome is returned as an output of the job and can be used in other jobs as `${{ needs.auth-commit-sig.outputs.outcome }}`
-
-See [Defining outputs for jobs](https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs) for more
-information.
+When the action is complete, the job prints an output that is a JSON blob containing information about the
+results of the action. It contains information about the commit, if signature verification was successful,
+if an allowlist email address or third party key was used, errors, and other details etc.
 
 ### Example Outcomes
 
@@ -274,7 +309,7 @@ information.
     "signature_key_id": "87A2691085B4544E"
   },
   "result": "PASS",
-  "desc": "Signature verified by Beyond Identity.",
+  "desc": "Signature verified by a Beyond Identity managed key.",
   "verification_details": {
     "verified_by": "BI_MANAGED_KEY",
     "bi_managed_key": {
@@ -310,7 +345,7 @@ information.
     "signature_key_id": "7723AD85B1221B3B"
   },
   "result": "PASS",
-  "desc": "Signature verified by third party key on the allowlist.",
+  "desc": "Signature verified by a third party key from the allowlist.",
   "verification_details": {
     "verified_by": "THIRD_PARTY_KEY",
     "third_party_key": {
@@ -318,6 +353,39 @@ information.
       "fingerprint": "VOcYYhfmV98gAMVoh6JpEIW0VE4=",
       "user_id": "Jane Doe <jane@doe.com>"
     }
+  },
+  "errors": []
+}
+```
+
+#### Passed with `EMAIL_ADDRESS`
+
+```json
+{
+  "version": "1.0.0",
+  "repository": "gobeyondidentity/auth-commit-sig",
+  "commit": {
+    "commit_hash": "7f1927513d02f546ed50579de7192c181836ea23",
+    "tree_hash": "d742502776eb874cba1605b768ad438810ecf911",
+    "parent_hashes": ["12cf190ced71c3d23107d90641b361b9edcc41f6"],
+    "author": {
+      "name": "Jane Doe",
+      "email_address": "jane@doe.com",
+      "timestamp": "2022-09-05T13:58:12-04:00"
+    },
+    "committer": {
+      "name": "Jane Doe",
+      "email_address": "jane@doe.com",
+      "timestamp": "2022-09-05T13:58:12-04:00"
+    },
+    "signed": true,
+    "signature_key_id": "7723AD85B1221B3B"
+  },
+  "result": "PASS",
+  "desc": "Bypassed signature verification with an email address from the allowlist.",
+  "verification_details": {
+    "verified_by": "EMAIL_ADDRESS",
+    "email_address": "jane@doe.com"
   },
   "errors": []
 }

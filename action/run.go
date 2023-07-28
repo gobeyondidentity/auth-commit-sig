@@ -43,18 +43,27 @@ func Run(ctx context.Context, cfg Config) *Outcome {
 
 	log.Printf("\nCommit:\n================\n%s\n================\n\n", PrettyPrintCommit(commit))
 
-	// Load the allowlist.
-	allowlist, err := LoadAllowlist(cfg.AllowlistConfigFilePath)
+	// Load the allowlist YAML.
+	allowlistYAML, err := LoadAllowlistYAML(cfg.AllowlistConfigFilePath)
 	if err != nil {
 		o.SetErrors(err)
 		o.SetResultAndDescription(FAIL, "Failed to load the allowlist. See errors for details.")
 		return o
 	}
 
+	var allowlist Allowlist
+	if commit.NumParents() > 1 {
+		allowlist = allowlistYAML.MergeCommitAllowlist
+		log.Printf("More than one parent hash, using merge commit allowlist.\n\n")
+	} else {
+		allowlist = allowlistYAML.NonMergeCommitAllowlist
+		log.Printf("One parent hash, using non merge commit allowlist.\n\n")
+	}
+
 	// Parse out valid allowlist email addresses and keys for the specified
 	// repository. Adds any parsing errors to the outcome but does not return
 	// at this step.
-	repoAllowlist, errs := GetAllowlistForRepo(allowlist, cfg.Repository)
+	repoAllowlist, errs := GetAllowlistForRepo(&allowlist, cfg.Repository)
 	if len(errs) > 0 {
 		o.SetErrors(errs...)
 	}
@@ -64,15 +73,15 @@ func Run(ctx context.Context, cfg Config) *Outcome {
 	// If the repo allowlist contains email addresses, attempt to bypass signature verification
 	// through the email address.
 	if len(repoAllowlist.EmailAddresses) > 0 {
-		log.Printf("Checking signature verification bypass with email address from the allowlist\n\n")
+		log.Printf("Checking signature verification bypass with email address from the allowlist.\n\n")
 		verified := verifyCommitByEmailAddress(committerEmail, repoAllowlist.EmailAddresses)
 		if verified {
-			log.Printf("Committer email: \"%s\" is on email address allowlist, bypassing signature verification\n\n", committerEmail)
+			log.Printf("Committer email: \"%s\" is on email address allowlist, bypassing signature verification.\n\n", committerEmail)
 			o.SetVerificationDetailsEmailAddress(committerEmail)
 			o.SetResultAndDescription(PASS, "Bypassed signature verification with an email address from the allowlist.")
 			return o
 		}
-		log.Printf("Committer email: \"%s\" is not on email address allowlist, continuing signature verification\n\n", committerEmail)
+		log.Printf("Committer email: \"%s\" is not on email address allowlist, continuing signature verification.\n\n", committerEmail)
 	}
 
 	// Validate that a signature exists for third party key validation and BI cloud verification.

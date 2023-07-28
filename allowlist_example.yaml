@@ -1,31 +1,78 @@
-email_addresses:
-  # `repositories` not defined, can bypass signature verification for _any_ repository.
-  - email_address: user1@company.com
+# Allowlist that is used when the commit is a merge commit.
+# A merge commit is defined as a commit containing two or more parents.
+# e.g. `git merge`
+merge_commit_allowlist:
+  email_addresses:
+    # `repositories` not defined, can bypass signature verification for _any_ repository.
+    - email_address: user1@company.com
 
-  # `repositories` defined, can bypass signature verification _only_ for repository_A and repository_B.
-  - email_address: user2@company.com
-    repositories:
-      - repository_A
-      - repository_B
-      
-third_party_keys:
-  # `repositories` not defined, can be used for signature verification for _any_ repository.
-  - key: |
-      -----BEGIN PGP PUBLIC KEY BLOCK-----
+    # `repositories` defined, can bypass signature verification _only_ for repository_A and repository_B.
+    - email_address: user2@company.com
+      repositories:
+        - repository_A
+        - repository_B
 
-      m3IEYr73lBMIKoZIzj01AQcCAwT1gCXHMjKP6EWgtzJNxpkfFWhpK4dsV1dfbzRz
-      ...truncated
+  third_party_keys:
+    # `repositories` not defined, can be used for signature verification for _any_ repository.
+    - key: |
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
 
-      -----END PGP PUBLIC KEY BLOCK-----
+        m3IEYr73lBMIKoZIzj01AQcCAwT1gCXHMjKP6EWgtzJNxpkfFWhpK4dsV1dfbzRz
+        ...truncated
 
-  # `repositories` defined, can be used for signature verification _only_ for repository_C and repository_D.
-  - key: |
-      -----BEGIN PGP PUBLIC KEY BLOCK-----
+        -----END PGP PUBLIC KEY BLOCK-----
 
-      t3IEYr738sG78d7SD01AQcCAwT1gCXHMjKP6EWgtzJNxpkfF01AQcCAwT11dfbzRx
-      ...truncated
+    # `repositories` defined, can be used for signature verification _only_ for repository_C and repository_D.
+    - key: |
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
 
-      -----END PGP PUBLIC KEY BLOCK-----
-    repositories:
-      - repository_C
-      - repository_D
+        t3IEYr738sG78d7SD01AQcCAwT1gCXHMjKP6EWgtzJNxpkfF01AQcCAwT11dfbzRx
+        ...truncated
+
+        -----END PGP PUBLIC KEY BLOCK-----
+      repositories:
+        - repository_C
+        - repository_D
+
+# Allowlist that is used when the commit is not a merge commit.
+# Please see https://www.atlassian.com/git/tutorials/using-branches/git-merge for more info.
+non_merge_commit_allowlist:
+  email_addresses:
+    # `repositories` not defined, can bypass signature verification for _any_ repository.
+    - email_address: user1@company.com
+
+    # `repositories` defined, can bypass signature verification _only_ for repository_A and repository_B.
+    - email_address: user2@company.com
+      repositories:
+        - repository_A
+        - repository_B
+        - repository_X
+        - repository_Y
+
+    # `repositories` defined, can bypass signature verification _only_ for repository_A and repository_B.
+    - email_address: user3@company.com
+      repositories:
+        - repository_A
+        - repository_B
+
+  third_party_keys:
+    # `repositories` not defined, can be used for signature verification for _any_ repository.
+    - key: |
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+        m3IEYr73lBMIKoZIzj01AQcCAwT1gCXHMjKP6EWgtzJNxpkfFWhpK4dsV1dfbzRz
+        ...truncated
+
+        -----END PGP PUBLIC KEY BLOCK-----
+
+    # `repositories` defined, can be used for signature verification _only_ for repository_C and repository_D.
+    - key: |
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
+
+        t3IEYr738sG78d7SD01AQcCAwT1gCXHMjKP6EWgtzJNxpkfF01AQcCAwT11dfbzRx
+        ...truncated
+
+        -----END PGP PUBLIC KEY BLOCK-----
+      repositories:
+        - repository_C
+        - repository_D

@@ -5,10 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"byndid/auth-commit-sig/action"
 )
@@ -18,7 +16,6 @@ func main() {
 
 	path := flag.String("path", ".", "Path to the git repository")
 	ref := flag.String("ref", "HEAD", "Commit reference to check")
-	ghOut := flag.Bool("github-output", false, "Flag to output outcome to a github action output.")
 	flag.Parse()
 
 	cfg := action.Config{
@@ -37,19 +34,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Pretty print JSON in logs.
-	prettyOutcomeJSON, err := prettyString(string(outcomeJSON))
-	if err != nil {
-		log.Printf("Failed to pretty outcome JSON: %v", err)
-		os.Exit(1)
-	} else {
-		log.Printf("Outcome JSON: \n%s", prettyOutcomeJSON)
-	}
-
-	// If github-output is true, produce output.
-	if *ghOut {
-		fmt.Printf("\"outcome=%s\" >> $GITHUB_OUTPUT\n", strings.TrimSpace(string(outcomeJSON)))
-	}
+	log.Printf("Outcome JSON: \n%s", outcomeJSON)
 
 	// If result of action is FAIL, exit with error.
 	if outcome.Result == action.FAIL {
@@ -80,15 +65,11 @@ func getOptionalEnv(name string, defaultValue string) string {
 func jsonMarshal(t interface{}) ([]byte, error) {
 	buffer := &bytes.Buffer{}
 	encoder := json.NewEncoder(buffer)
+	// Since the output is not intended for embedding in HTML
+	// and HTML escaped entities are harder to read, we
+	// explicitly do not HTML escape here.
 	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "    ")
 	err := encoder.Encode(t)
 	return buffer.Bytes(), err
-}
-
-func prettyString(str string) (string, error) {
-	var prettyJSON bytes.Buffer
-	if err := json.Indent(&prettyJSON, []byte(str), "", "    "); err != nil {
-		return "", err
-	}
-	return prettyJSON.String(), nil
 }

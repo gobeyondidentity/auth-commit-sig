@@ -10,6 +10,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// AllowlistYAML is the struct containing two allowlists.
+// One allowlist for merge commits and the other for non-merge commits.
+// A merge commit is defined as a commit with two or more parents.
+type AllowlistYAML struct {
+	MergeCommitAllowlist    Allowlist `yaml:"merge_commit_allowlist"`
+	NonMergeCommitAllowlist Allowlist `yaml:"non_merge_commit_allowlist"`
+}
+
 // Allowlist is the struct containing two lists:
 //
 // 1. (EmailAddresses) Email addresses and the repositories that the
@@ -44,26 +52,25 @@ type ThirdPartyKeyEntry struct {
 	Repositories []string `yaml:"repositories"`
 }
 
-// LoadAllowlist verifies and parses the allowlist configuration from the allowlist
-// file path. If filePath is empty, returns an Allowlist struct containing empty
-// lists for email addresses and third party keys.
-func LoadAllowlist(filePath string) (*Allowlist, error) {
+// LoadAllowlistYAML verifies and parses the allowlist configuration from the allowlist
+// file path. If filePath is empty, returns an empty AllowlistYAML.
+func LoadAllowlistYAML(filePath string) (*AllowlistYAML, error) {
 	if filePath == "" {
 		log.Println("No allowlist configured")
-		return &Allowlist{}, nil
+		return &AllowlistYAML{}, nil
 	}
 	yfile, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf(`failed to read allowlist yaml configuration file at '%s': %w`, filePath, err)
 	}
 
-	var allowlist *Allowlist
-	err = yaml.Unmarshal(yfile, &allowlist)
+	var allowlistYAML *AllowlistYAML
+	err = yaml.Unmarshal(yfile, &allowlistYAML)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal allowlist yaml configuration file: %w", err)
 	}
 
-	return allowlist, nil
+	return allowlistYAML, nil
 }
 
 // RepoAllowlist is the struct containing the validated email addresses

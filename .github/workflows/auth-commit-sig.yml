@@ -62,11 +62,3 @@ jobs:
           # Ex. `./{path_to_allowlist}`
           # See README for details on how to format this file.
           allowlist_config_file_path: "./allowlist-dir/allowlist.yaml" 
-        # Echo outcome JSON to standard out.
-        # Outcome can be used in other steps as ${{ steps.signature-verification.outputs.outcome }}.
-      - name: Print outcome
-        run: |
-          echo '${{ steps.signature-verification.outputs.outcome }}'
-    # Output of job. Can be accessed in other jobs as ${{ needs.auth-commit-sig.outputs.outcome }}.
-    outputs:
-      outcome: ${{ steps.signature-verification.outputs.outcome }}
